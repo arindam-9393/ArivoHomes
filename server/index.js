@@ -2,6 +2,8 @@ const express = require('express');
 const dotenv = require('dotenv').config();
 const connectDB = require('./config/db');
 const cors = require('cors'); // <--- 1. Import CORS
+const passport = require('passport'); 
+require('./config/passport'); // <--- Loads the file you just created
 
 // Routes
 const bookingRouter = require('./routes/bookingRoutes');

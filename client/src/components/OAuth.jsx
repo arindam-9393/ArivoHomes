@@ -14,7 +14,7 @@ const OAuth = ({ role }) => {
             const result = await signInWithPopup(auth, provider);
             
             // 2. SEND ROLE TO BACKEND
-            const res = await axios.post('http://localhost:3000/user/google', {
+            const res = await axios.post('https://arivohomes.onrender.com/user/google', {
                 name: result.user.displayName,
                 email: result.user.email,
                 photo: result.user.photoURL,

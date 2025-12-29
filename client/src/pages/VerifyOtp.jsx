@@ -13,7 +13,7 @@ const VerifyOtp = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await axios.post('http://localhost:3000/user/verify-otp', { email, otp });
+            const res = await axios.post('https://arivohomes.onrender.com/user/verify-otp', { email, otp });
             alert(res.data.message);
             navigate('/login');
         } catch (error) {

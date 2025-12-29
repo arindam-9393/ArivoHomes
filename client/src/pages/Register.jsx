@@ -30,7 +30,7 @@ const Register = () => {
         setLoading(true);
 
         try {
-            const res = await axios.post('http://localhost:3000/user/register', formData);
+            const res = await axios.post('https://arivohomes.onrender.com/user/register', formData);
             
             alert(res.data.message); 
             navigate('/verify-otp', { state: { email: formData.email } });

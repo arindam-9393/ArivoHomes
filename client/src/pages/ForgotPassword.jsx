@@ -13,7 +13,7 @@ const ForgotPassword = () => {
         setLoading(true);
         try {
             // FIXED URL: Changed '/api/users' to '/user' to match your Login setup
-            await axios.post('http://localhost:3000/user/forgot-password', { email });
+            await axios.post('https://arivohomes.onrender.com/user/forgot-password', { email });
             setMessage("Email Sent! Check your inbox.");
             setError('');
         } catch (err) {

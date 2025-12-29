@@ -21,7 +21,7 @@ const ResetPassword = () => {
 
         try {
             // FIXED URL: Changed '/api/users' to '/user'
-            await axios.put(`http://localhost:3000/user/reset-password/${token}`, { password });
+            await axios.put(`https://arivohomes.onrender.com/user/reset-password/${token}`, { password });
             setMessage("Password Reset Successful! Redirecting...");
             setTimeout(() => navigate('/login'), 2000);
         } catch (err) {

@@ -83,7 +83,7 @@ const AddProperty = () => {
                 // Step 1: Get Signature from YOUR Backend
                 // Note: Ensure this URL matches your backend route exactly!
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
-                const { data: signData } = await axios.get('http://localhost:3000/property/upload-signature', config);
+                const { data: signData } = await axios.get('https://arivohomes.onrender.com/property/upload-signature', config);
 
                 // Step 2: Prepare Upload Data
                 const formData = new FormData();
@@ -184,7 +184,7 @@ const AddProperty = () => {
                 price: Number(formData.price)
             }; 
             
-            await axios.post('http://localhost:3000/property', payload, config);
+            await axios.post('https://arivohomes.onrender.com/property', payload, config);
             
             alert("Property Listed Successfully! 🎉");
             navigate('/properties');

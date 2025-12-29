@@ -20,7 +20,7 @@ const UserProfile = () => {
             try {
                 // 2. CALL BACKEND WITH THAT ID
                 const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-                const res = await axios.get(`http://localhost:3000/api/users/${id}`, config);
+                const res = await axios.get(`https://arivohomes.onrender.com/api/users/${id}`, config);
                 
                 setProfile(res.data.user);
                 setHistory(res.data.history);

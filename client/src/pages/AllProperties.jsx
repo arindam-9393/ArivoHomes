@@ -66,7 +66,7 @@ const AllProperties = () => {
         if (filters.furnishingItems.length > 0) params.append('furnishingItems', filters.furnishingItems.join(','));
         if (filters.amenities.length > 0) params.append('amenities', filters.amenities.join(','));
 
-        const res = await axios.get(`http://localhost:3000/property?${params}`);
+        const res = await axios.get(`https://arivohomes.onrender.com/property?${params}`);
         setProperties(Array.isArray(res.data) ? res.data : []);
       } catch (e) {
         console.error(e);

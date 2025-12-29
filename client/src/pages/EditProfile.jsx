@@ -45,7 +45,7 @@ const EditProfile = () => {
         try {
             // A. Get Signature from Backend
             // FIXED: Path is now /user/sign-upload (matches index.js)
-            const { data: signData } = await axios.get('http://localhost:3000/user/sign-upload', {
+            const { data: signData } = await axios.get('https://arivohomes.onrender.com/user/sign-upload', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
 
@@ -88,7 +88,7 @@ const EditProfile = () => {
         try {
             // FIXED: Path is now /user/profile (matches index.js)
             const { data: updatedUser } = await axios.put(
-                'http://localhost:3000/user/profile',
+                'https://arivohomes.onrender.com/user/profile',
                 {
                     name: formData.name,
                     phone: formData.phone,

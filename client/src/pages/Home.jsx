@@ -10,7 +10,7 @@ const Home = () => {
     useEffect(() => {
         const fetchLocations = async () => {
             try {
-                const res = await axios.get('http://localhost:3000/property');
+                const res = await axios.get('https://arivohomes.onrender.com/property');
                 const locations = res.data.map(p => p.location);
                 const tags = res.data.flatMap(p => p.tags || []);
                 setAllLocations([...new Set([...locations, ...tags])]);

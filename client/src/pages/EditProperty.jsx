@@ -34,7 +34,7 @@ const EditProperty = () => {
     useEffect(() => {
         const fetchProperty = async () => {
             try {
-                const res = await axios.get(`http://localhost:3000/property/${id}`);
+                const res = await axios.get(`https://arivohomes.onrender.com/property/${id}`);
                 const p = res.data;
                 
                 setFormData({
@@ -82,7 +82,7 @@ const EditProperty = () => {
             try {
                 // Get Signature
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
-                const { data: signData } = await axios.get('http://localhost:3000/property/upload-signature', config);
+                const { data: signData } = await axios.get('https://arivohomes.onrender.com/property/upload-signature', config);
 
                 const data = new FormData();
                 data.append("file", file);
@@ -136,7 +136,7 @@ const EditProperty = () => {
                 tags: formData.tags.includes(',') ? formData.tags.split(',').map(t=>t.trim()) : formData.tags
             };
 
-            await axios.put(`http://localhost:3000/property/${id}`, payload, config);
+            await axios.put(`https://arivohomes.onrender.com/property/${id}`, payload, config);
             
             alert("Property Updated Successfully!");
             navigate('/dashboard'); 

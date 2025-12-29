@@ -30,7 +30,7 @@ app.get('/', (req, res) => {
     res.send("ArivoHomes API is running...");
 });
 
-// Note: This matches your frontend call: http://localhost:3000/user/google
+// Note: This matches your frontend call: https://arivohomes.onrender.com/user/google
 app.use('/booking', bookingRouter);
 app.use('/property', propertyRouter);
 app.use('/user', userRouter); 

@@ -26,7 +26,7 @@ const PropertyDetails = () => {
     useEffect(() => {
         const fetchProperty = async () => {
             try {
-                const response = await axios.get(`http://localhost:3000/property/${id}`);
+                const response = await axios.get(`https://arivohomes.onrender.com/property/${id}`);
                 const data = response.data;
                 setProperty(data);
                 
@@ -80,7 +80,7 @@ const PropertyDetails = () => {
         if (confirm("Are you sure? This cannot be undone.")) {
             try {
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
-                await axios.delete(`http://localhost:3000/property/${id}`, config);
+                await axios.delete(`https://arivohomes.onrender.com/property/${id}`, config);
                 alert("Property Deleted");
                 navigate('/dashboard');
             } catch (error) {
@@ -95,7 +95,7 @@ const PropertyDetails = () => {
 
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.post('http://localhost:3000/booking', { propertyId: property._id, moveInDate, message }, config);
+            await axios.post('https://arivohomes.onrender.com/booking', { propertyId: property._id, moveInDate, message }, config);
             alert("Request Sent! Check your Dashboard for updates. 🚀");
             navigate('/dashboard'); 
         } catch (error) {

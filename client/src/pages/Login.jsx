@@ -19,7 +19,7 @@ const Login = () => {
     const onSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:3000/user/login', formData);
+            const response = await axios.post('https://arivohomes.onrender.com/user/login', formData);
             localStorage.setItem('user', JSON.stringify(response.data));
             alert('Login Successful!');
             navigate('/');

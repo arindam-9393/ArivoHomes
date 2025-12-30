@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import API from '../axiosConfig';
+import API from '../axiosConfig'; // Keep this for your Backend calls
+import axios from 'axios';        // 👈 ADD THIS: Fresh axios for Cloudinary
 import { useNavigate } from 'react-router-dom';
 
 const EditProfile = () => {
@@ -43,7 +44,7 @@ const EditProfile = () => {
 
         setUploading(true);
         try {
-            // A. Get Signature from Backend
+            // A. Get Signature from Backend (Keep using API here because we need auth)
             const { data: signData } = await API.get('/user/sign-upload', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
@@ -59,13 +60,11 @@ const EditProfile = () => {
             // C. Upload to Cloudinary
             const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dtrpcnpkm'; 
             
-            // 🚨 THE FIX IS HERE 👇
-            const res = await API.post(
+            // 🚨 THE FIX IS HERE: Use 'axios' instead of 'API' 👇
+            // Standard axios doesn't send cookies by default, so Cloudinary will accept it.
+            const res = await axios.post(
                 `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, 
-                uploadData,
-                { 
-                    withCredentials: false // <--- THIS STOPS THE CORS ERROR
-                }
+                uploadData
             );
 
             // D. Update Local State (Preview)
@@ -85,6 +84,7 @@ const EditProfile = () => {
         setLoading(true);
 
         try {
+            // Keep using API here (We need to send cookies/token to YOUR backend)
             const { data: updatedUser } = await API.put(
                 '/user/profile',
                 {

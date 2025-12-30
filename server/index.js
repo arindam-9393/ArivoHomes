@@ -18,12 +18,8 @@ const port = process.env.PORT || 3000;
 // 1. Finalized CORS Configuration
 // This allows both your local dev environment and your live Vercel site to talk to this backend.
 app.use(cors({
-  origin: [
-    "http://localhost:5173", 
-    "https://arivo-homes-nir0xtba8-arivo-homes.vercel.app" 
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true // Crucial for sending JWT tokens in headers/cookies
+  origin: true, // Allows any origin
+  credentials: true
 }));
 
 app.use(express.json());

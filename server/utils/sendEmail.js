@@ -1,25 +1,40 @@
-const nodemailer = require("nodemailer");
+const axios = require('axios');
 
 const sendEmail = async (options) => {
-    const transporter = nodemailer.createTransport({
-        host: "smtp-relay.brevo.com", // 👈 Pointing to Brevo
-        port: 587,
-        secure: false, // Must be false for port 587
-        auth: {
-            user: process.env.EMAIL_USER, // Your Brevo Login Email
-            pass: process.env.EMAIL_PASS, // Your Brevo Key (xsmtpsib...)
-        },
-    });
-
-    const message = {
-        from: `"ArivoHomes" <${process.env.EMAIL_USER}>`, // This sender must be verified in Brevo
-        to: options.email,
+    // 1. The Brevo API URL (Port 443 - Always Open on Render)
+    const url = "https://api.brevo.com/v3/smtp/email";
+    
+    // 2. The Data Payload
+    const data = {
+        sender: { 
+            name: "ArivoHomes", 
+            email: process.env.EMAIL_USER // Must match your Brevo login email
+        }, 
+        to: [{ 
+            email: options.email,
+            name: options.email 
+        }],
         subject: options.subject,
-        html: options.html,
+        htmlContent: options.html // Note: Brevo API uses 'htmlContent', NOT 'html'
     };
 
-    const info = await transporter.sendMail(message);
-    console.log("Message sent: %s", info.messageId);
+    // 3. The Headers (Authentication)
+    const config = {
+        headers: {
+            'accept': 'application/json',
+            'api-key': process.env.BREVO_API_KEY, // Uses the NEW key
+            'content-type': 'application/json'
+        }
+    };
+
+    try {
+        const response = await axios.post(url, data, config);
+        console.log("✅ Email sent via API! ID:", response.data.messageId);
+        return true;
+    } catch (error) {
+        console.error("❌ API Email Failed:", error.response ? error.response.data : error.message);
+        throw new Error("Email could not be sent");
+    }
 };
 
 module.exports = sendEmail;

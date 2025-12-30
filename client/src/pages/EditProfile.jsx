@@ -36,7 +36,7 @@ const EditProfile = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // 4. Handle Image Selection & Upload (CORRECTED ROUTES)
+    // 4. Handle Image Selection & Upload
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -44,7 +44,6 @@ const EditProfile = () => {
         setUploading(true);
         try {
             // A. Get Signature from Backend
-            // FIXED: Path is now /user/sign-upload (matches index.js)
             const { data: signData } = await API.get('/user/sign-upload', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
@@ -52,21 +51,21 @@ const EditProfile = () => {
             // B. Prepare Cloudinary Payload
             const uploadData = new FormData();
             uploadData.append("file", file);
-            
-            // Use Frontend ENV variable for API Key
             uploadData.append("api_key", import.meta.env.VITE_CLOUDINARY_API_KEY); 
-            
             uploadData.append("timestamp", signData.timestamp);
             uploadData.append("signature", signData.signature);
             uploadData.append("folder", "user_profiles");
 
             // C. Upload to Cloudinary
-            // Use Frontend ENV for Cloud Name (or fallback)
             const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dtrpcnpkm'; 
             
+            // 🚨 THE FIX IS HERE 👇
             const res = await API.post(
                 `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, 
-                uploadData
+                uploadData,
+                { 
+                    withCredentials: false // <--- THIS STOPS THE CORS ERROR
+                }
             );
 
             // D. Update Local State (Preview)
@@ -80,13 +79,12 @@ const EditProfile = () => {
         }
     };
 
-    // 5. Save All Changes (CORRECTED ROUTES)
+    // 5. Save All Changes
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            // FIXED: Path is now /user/profile (matches index.js)
             const { data: updatedUser } = await API.put(
                 '/user/profile',
                 {
@@ -130,13 +128,13 @@ const EditProfile = () => {
                              src={formData.photo} 
                              alt="Profile" 
                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                         />
+                          />
                         ) : (
                             <div style={{width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'2rem', color:'#ccc'}}>
                                 {formData.name?.charAt(0) || "U"}
                             </div>
                         )}
-                       
+                        
                         {uploading && (
                             <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '12px' }}>
                                 Uploading...

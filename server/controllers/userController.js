@@ -74,6 +74,9 @@ const googleAuth = async (req, res) => {
 // ==========================================
 // REGISTRATION & OTP
 // ==========================================
+// ==========================================
+// REGISTRATION & OTP
+// ==========================================
 const registerUser = async (req, res) => {
     try {
         const { name, email, password, phone, role } = req.body;
@@ -116,8 +119,14 @@ const registerUser = async (req, res) => {
                 });
                 res.status(201).json({ message: "OTP sent to your email!", email: user.email });
             } catch (error) {
+                // 🚨 CRITICAL DEBUGGING LINE
+                console.error("❌ EMAIL ERROR:", error); 
+
                 await User.findByIdAndDelete(user._id);
-                return res.status(500).json({ message: "Email could not be sent. Registration failed." });
+                return res.status(500).json({ 
+                    message: "Email could not be sent. Registration failed.",
+                    error: error.message // Helps you see the reason in the Browser Network Tab
+                });
             }
         }
     } catch (error) {

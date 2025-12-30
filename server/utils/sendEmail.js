@@ -1,24 +1,33 @@
 const nodemailer = require("nodemailer");
 
 const sendEmail = async (options) => {
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465, // Use 465 for secure, or 587 for TLS
-    secure: true, // true for 465, false for other ports
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+    // 1. Create Transporter with "Secure" settings for Production
+    const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,        // <--- CRITICAL: Use 465 for Production
+        secure: true,     // <--- CRITICAL: Must be true for port 465
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+        // 2. Add this "tls" block to prevent certificate errors on some cloud servers
+        tls: {
+            rejectUnauthorized: false
+        }
+    });
 
-  const message = {
-    from: `${process.env.FROM_NAME} <${process.env.EMAIL_USER}>`,
-    to: options.email,
-    subject: options.subject,
-    html: options.html,
-  };
+    // 3. Define the email options
+    const message = {
+        from: `"ArivoHomes Support" <${process.env.EMAIL_USER}>`,
+        to: options.email,
+        subject: options.subject,
+        html: options.html,
+    };
 
-  await transporter.sendMail(message);
+    // 4. Send the email
+    const info = await transporter.sendMail(message);
+    
+    console.log("Message sent: %s", info.messageId);
 };
 
 module.exports = sendEmail;

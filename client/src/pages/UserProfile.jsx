@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import API from '../axiosConfig';
 
 const UserProfile = () => {
     // 1. GET ID FROM URL (e.g., /profile/65a123...)
@@ -20,7 +20,7 @@ const UserProfile = () => {
             try {
                 // 2. CALL BACKEND WITH THAT ID
                 const config = { headers: { Authorization: `Bearer ${currentUser.token}` } };
-                const res = await axios.get(`https://arivohomes.onrender.com/api/users/${id}`, config);
+                const res = await API.get(`/api/users/${id}`, config);
                 
                 setProfile(res.data.user);
                 setHistory(res.data.history);

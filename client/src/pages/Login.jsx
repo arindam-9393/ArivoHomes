@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import OAuth from '../components/OAuth';
-import axios from 'axios';
+import API from '../axiosConfig';
 import { useNavigate, Link } from 'react-router-dom';
 
 const Login = () => {
@@ -19,7 +19,7 @@ const Login = () => {
     const onSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('https://arivohomes.onrender.com/user/login', formData);
+            const response = await API.post('/user/login', formData);
             localStorage.setItem('user', JSON.stringify(response.data));
             alert('Login Successful!');
             navigate('/');

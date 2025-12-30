@@ -14,7 +14,65 @@ const generateToken = (id) => {
 };
 
 // ==========================================
-// REGISTRATION & OTP (KEPT ORIGINAL)
+// GOOGLE AUTH CONTROLLER (PASSPORT-FREE)
+// ==========================================
+const googleAuth = async (req, res) => {
+    try {
+        const { name, email, photo, role } = req.body;
+
+        // 1. Check if user already exists
+        let user = await User.findOne({ email });
+
+        if (user) {
+            // If they exist but weren't verified, verify them now
+            if (!user.isVerified) {
+                user.isVerified = true;
+                await user.save();
+            }
+            
+            // Log them in and send token
+            return res.status(200).json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                photo: user.photo,
+                token: generateToken(user._id),
+            });
+        } else {
+            // 2. Create new user if they don't exist
+            // Generate a random password since Google handles auth
+            const randomPassword = crypto.randomBytes(16).toString('hex');
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(randomPassword, salt);
+
+            user = await User.create({
+                name,
+                email,
+                password: hashedPassword,
+                role: role || 'tenant',
+                photo,
+                provider: 'google',
+                isVerified: true
+            });
+
+            return res.status(201).json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                photo: user.photo,
+                token: generateToken(user._id),
+            });
+        }
+    } catch (error) {
+        console.error("Google Auth Error:", error);
+        res.status(400).json({ message: "Google authentication failed" });
+    }
+};
+
+// ==========================================
+// REGISTRATION & OTP
 // ==========================================
 const registerUser = async (req, res) => {
     try {
@@ -63,7 +121,6 @@ const registerUser = async (req, res) => {
             }
         }
     } catch (error) {
-        console.log(error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -120,51 +177,6 @@ const loginUser = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 }
-
-// ==========================================
-// GOOGLE AUTH CONTROLLER
-// ==========================================
-const googleAuth = async (req, res) => {
-    try {
-        const { name, email, photo, role } = req.body;
-        let user = await User.findOne({ email });
-
-        if (user) {
-            if (!user.isVerified) {
-                user.isVerified = true;
-                await user.save();
-            }
-            res.json({
-                _id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                provider: user.provider,
-                token: generateToken(user._id),
-            });
-        } else {
-            const randomPassword = Math.random().toString(36).slice(-8);
-            user = await User.create({
-                name,
-                email,
-                password: randomPassword,
-                role: role || 'tenant',
-                photo,
-                provider: 'google',
-                isVerified: true
-            });
-            res.status(201).json({
-                _id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                token: generateToken(user._id),
-            });
-        }
-    } catch (error) {
-        res.status(400).json({ message: error.message });
-    }
-};
 
 // ==========================================
 // PROFILE & DATA
@@ -228,7 +240,7 @@ const updateUserProfile = async (req, res) => {
 };
 
 // ==========================================
-// PASSWORD RESET (FIXED LINK HERE) 🔧
+// PASSWORD RESET
 // ==========================================
 const forgotPassword = async (req, res) => {
     const { email } = req.body;
@@ -242,10 +254,11 @@ const forgotPassword = async (req, res) => {
         user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
         await user.save();
 
-        // ✅ FIX: Use Vercel Link for production, localhost for dev
-        const clientURL = process.env.CLIENT_URL || "http://localhost:5173";
-        const resetUrl = `${clientURL}/reset-password/${resetToken}`;
+        const clientURL = process.env.NODE_ENV === 'production' 
+            ? "https://arivohomes.vercel.app" 
+            : "http://localhost:5173";
 
+        const resetUrl = `${clientURL}/reset-password/${resetToken}`;
         const message = `
             <h1>Password Reset</h1>
             <p>Click below to reset your password:</p>

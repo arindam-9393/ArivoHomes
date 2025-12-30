@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import API from '../axiosConfig';
 import { Link, useLocation } from 'react-router-dom';
 
 const AllProperties = () => {
@@ -66,7 +66,7 @@ const AllProperties = () => {
         if (filters.furnishingItems.length > 0) params.append('furnishingItems', filters.furnishingItems.join(','));
         if (filters.amenities.length > 0) params.append('amenities', filters.amenities.join(','));
 
-        const res = await axios.get(`https://arivohomes.onrender.com/property?${params}`);
+        const res = await API.get(`/property?${params}`);
         setProperties(Array.isArray(res.data) ? res.data : []);
       } catch (e) {
         console.error(e);

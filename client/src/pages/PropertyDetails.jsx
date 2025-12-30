@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import API from '../axiosConfig';
 
 const PropertyDetails = () => {
     const { id } = useParams();
@@ -26,7 +26,7 @@ const PropertyDetails = () => {
     useEffect(() => {
         const fetchProperty = async () => {
             try {
-                const response = await axios.get(`https://arivohomes.onrender.com/property/${id}`);
+                const response = await API.get(`/property/${id}`);
                 const data = response.data;
                 setProperty(data);
                 
@@ -80,7 +80,7 @@ const PropertyDetails = () => {
         if (confirm("Are you sure? This cannot be undone.")) {
             try {
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
-                await axios.delete(`https://arivohomes.onrender.com/property/${id}`, config);
+                await API.delete(`/property/${id}`, config);
                 alert("Property Deleted");
                 navigate('/dashboard');
             } catch (error) {
@@ -95,7 +95,7 @@ const PropertyDetails = () => {
 
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await axios.post('https://arivohomes.onrender.com/booking', { propertyId: property._id, moveInDate, message }, config);
+            await API.post('/booking', { propertyId: property._id, moveInDate, message }, config);
             alert("Request Sent! Check your Dashboard for updates. 🚀");
             navigate('/dashboard'); 
         } catch (error) {

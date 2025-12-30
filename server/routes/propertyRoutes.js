@@ -18,12 +18,12 @@ const {
 // NEW: Route to get signature (Must be protected)
 router.get('/upload-signature', protect, getUploadSignature);
 
-// Routes for "/" (e.g., https://arivohomes.onrender.com/property)
+// Routes for "/" (e.g., /property)
 router.route('/')
     .get(getProperties)         // Public: Search & Filter properties
     .post(protect, createProperty); // Private: Create a new listing (Owner only)
 
-// Routes for "/:id" (e.g., https://arivohomes.onrender.com/property/65a...)
+// Routes for "/:id" (e.g., /property/65a...)
 router.route('/:id')
     .get(getProperty)           // Public: View single property details
     .put(protect, updateProperty)   // Private: Update property (Owner only)

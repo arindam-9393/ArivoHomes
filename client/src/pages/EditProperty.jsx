@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import API from '../axiosConfig';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const EditProperty = () => {
@@ -34,7 +34,7 @@ const EditProperty = () => {
     useEffect(() => {
         const fetchProperty = async () => {
             try {
-                const res = await axios.get(`https://arivohomes.onrender.com/property/${id}`);
+                const res = await API.get(`/property/${id}`);
                 const p = res.data;
                 
                 setFormData({
@@ -82,7 +82,7 @@ const EditProperty = () => {
             try {
                 // Get Signature
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
-                const { data: signData } = await axios.get('https://arivohomes.onrender.com/property/upload-signature', config);
+                const { data: signData } = await API.get('/property/upload-signature', config);
 
                 const data = new FormData();
                 data.append("file", file);
@@ -136,7 +136,7 @@ const EditProperty = () => {
                 tags: formData.tags.includes(',') ? formData.tags.split(',').map(t=>t.trim()) : formData.tags
             };
 
-            await axios.put(`https://arivohomes.onrender.com/property/${id}`, payload, config);
+            await API.put(`/property/${id}`, payload, config);
             
             alert("Property Updated Successfully!");
             navigate('/dashboard'); 

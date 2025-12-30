@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import API from '../axiosConfig';
 import { useNavigate } from 'react-router-dom';
 
 const EditProfile = () => {
@@ -45,7 +45,7 @@ const EditProfile = () => {
         try {
             // A. Get Signature from Backend
             // FIXED: Path is now /user/sign-upload (matches index.js)
-            const { data: signData } = await axios.get('https://arivohomes.onrender.com/user/sign-upload', {
+            const { data: signData } = await API.get('/user/sign-upload', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
 
@@ -64,7 +64,7 @@ const EditProfile = () => {
             // Use Frontend ENV for Cloud Name (or fallback)
             const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dtrpcnpkm'; 
             
-            const res = await axios.post(
+            const res = await API.post(
                 `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, 
                 uploadData
             );
@@ -87,8 +87,8 @@ const EditProfile = () => {
 
         try {
             // FIXED: Path is now /user/profile (matches index.js)
-            const { data: updatedUser } = await axios.put(
-                'https://arivohomes.onrender.com/user/profile',
+            const { data: updatedUser } = await API.put(
+                '/user/profile',
                 {
                     name: formData.name,
                     phone: formData.phone,

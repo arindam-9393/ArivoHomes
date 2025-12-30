@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import API from '../axiosConfig';
 import { useParams, useNavigate } from 'react-router-dom';
 
 const ResetPassword = () => {
@@ -21,7 +21,7 @@ const ResetPassword = () => {
 
         try {
             // FIXED URL: Changed '/api/users' to '/user'
-            await axios.put(`https://arivohomes.onrender.com/user/reset-password/${token}`, { password });
+            await API.put(`/user/reset-password/${token}`, { password });
             setMessage("Password Reset Successful! Redirecting...");
             setTimeout(() => navigate('/login'), 2000);
         } catch (err) {

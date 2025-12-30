@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import API from '../axiosConfig';
 import OAuth from '../components/OAuth';
 
 const Register = () => {
@@ -30,7 +30,7 @@ const Register = () => {
         setLoading(true);
 
         try {
-            const res = await axios.post('https://arivohomes.onrender.com/user/register', formData);
+            const res = await API.post('/user/register', formData);
             
             alert(res.data.message); 
             navigate('/verify-otp', { state: { email: formData.email } });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import API from '../axiosConfig';
 import { useNavigate } from 'react-router-dom';
 
 const AddProperty = () => {
@@ -83,7 +83,7 @@ const AddProperty = () => {
                 // Step 1: Get Signature from YOUR Backend
                 // Note: Ensure this URL matches your backend route exactly!
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
-                const { data: signData } = await axios.get('https://arivohomes.onrender.com/property/upload-signature', config);
+                const { data: signData } = await API.get('/property/upload-signature', config);
 
                 // Step 2: Prepare Upload Data
                 const formData = new FormData();
@@ -184,7 +184,7 @@ const AddProperty = () => {
                 price: Number(formData.price)
             }; 
             
-            await axios.post('https://arivohomes.onrender.com/property', payload, config);
+            await API.post('/property', payload, config);
             
             alert("Property Listed Successfully! 🎉");
             navigate('/properties');

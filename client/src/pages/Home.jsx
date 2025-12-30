@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import API from '../axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 
@@ -10,7 +10,7 @@ const Home = () => {
     useEffect(() => {
         const fetchLocations = async () => {
             try {
-                const res = await axios.get('https://arivohomes.onrender.com/property');
+                const res = await API.get('/property');
                 const locations = res.data.map(p => p.location);
                 const tags = res.data.flatMap(p => p.tags || []);
                 setAllLocations([...new Set([...locations, ...tags])]);

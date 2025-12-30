@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import API from '../axiosConfig';
 import { Link } from 'react-router-dom';
 
 const ForgotPassword = () => {
@@ -13,7 +13,7 @@ const ForgotPassword = () => {
         setLoading(true);
         try {
             // FIXED URL: Changed '/api/users' to '/user' to match your Login setup
-            await axios.post('https://arivohomes.onrender.com/user/forgot-password', { email });
+            await API.post('/user/forgot-password', { email });
             setMessage("Email Sent! Check your inbox.");
             setError('');
         } catch (err) {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import API from '../axiosConfig';
 
 const VerifyOtp = () => {
     const [otp, setOtp] = useState('');
@@ -13,7 +13,7 @@ const VerifyOtp = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await axios.post('https://arivohomes.onrender.com/user/verify-otp', { email, otp });
+            const res = await API.post('/user/verify-otp', { email, otp });
             alert(res.data.message);
             navigate('/login');
         } catch (error) {

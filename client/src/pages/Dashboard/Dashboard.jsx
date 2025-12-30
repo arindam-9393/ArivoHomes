@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import API from '../../axiosConfig';
 import { useNavigate, Link } from 'react-router-dom';
 import './Dashboard.css';
 
@@ -28,7 +28,7 @@ const Dashboard = () => {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
       
       // 1. Fetch Bookings
-      const bookingRes = await axios.get('https://arivohomes.onrender.com/booking', config);
+      const bookingRes = await API.get('/booking', config);
       setBookings(bookingRes.data);
 
       // 2. Tenant Logic
@@ -39,7 +39,7 @@ const Dashboard = () => {
 
       // 3. Owner Logic
       if (user.role === 'owner') {
-        const propRes = await axios.get('https://arivohomes.onrender.com/property');
+        const propRes = await API.get('/property');
         // Filter my properties
         const ownerProps = propRes.data.filter(p => {
              const ownerId = p.owner?._id || p.owner; 
@@ -54,7 +54,7 @@ const Dashboard = () => {
   const handleStatusUpdate = async (id, status) => {
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      await axios.put(`https://arivohomes.onrender.com/booking/${id}`, { status }, config);
+      await API.put(`/booking/${id}`, { status }, config);
       alert(status === 'Booked' ? "Tenant Finalized! Property Locked." : "Status Updated");
       window.location.reload();
     } catch (err) { alert('Update Failed'); }
@@ -64,7 +64,7 @@ const Dashboard = () => {
     if(!confirm("Is the tenant leaving? Property will be available again.")) return;
     try {
         const config = { headers: { Authorization: `Bearer ${user.token}` } };
-        await axios.put(`https://arivohomes.onrender.com/booking/vacate`, { propertyId }, config);
+        await API.put(`/booking/vacate`, { propertyId }, config);
         window.location.reload();
     } catch { alert("Failed to vacate"); }
   };
@@ -73,7 +73,7 @@ const Dashboard = () => {
     if(!confirm("Delete this property?")) return;
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      await axios.delete(`https://arivohomes.onrender.com/property/${id}`, config);
+      await API.delete(`/property/${id}`, config);
       window.location.reload();
     } catch { alert("Delete failed"); }
   };

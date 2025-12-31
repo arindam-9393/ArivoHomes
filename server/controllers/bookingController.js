@@ -3,9 +3,11 @@ const Property = require('../models/Property');
 
 
 // 1. Request a Visit
+// 1. Request a Visit
 const createBooking = async (req, res) => {
     try {
-        const { propertyId, moveInDate, message } = req.body;
+        // --- ADD visitTime TO DESTRUCTURING ---
+        const { propertyId, moveInDate, visitTime, message } = req.body;
         
         const property = await Property.findById(propertyId);
         if (property.status === 'Rented') {
@@ -16,14 +18,17 @@ const createBooking = async (req, res) => {
             property: propertyId,
             user: req.user._id,
             moveInDate,
+            visitTime, // --- SAVE THE TIME ---
             message,
-            status: 'Pending' // Initial state
+            status: 'Pending'
         });
         res.status(201).json(booking);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
+
+// ... keep the rest of the file exactly the same
 
 // 2. Get Bookings (With Owner/Tenant Details)
 const getUserBookings = async (req, res) => {

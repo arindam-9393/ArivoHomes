@@ -3,17 +3,31 @@ const ApplicationCard = ({ booking, user, handleStatusUpdate }) => {
     const isActive = booking.status === 'Pending' || booking.status === 'Visit Scheduled';
     
     // Is this a PAST rental (Lived there and left)?
-    // We assume 'Vacated' status means they lived there. 
-    // If you don't have 'Vacated', we check if it was 'Rejected' BUT had a move-in date set (unlikely for rejected)
     const isPastRental = booking.status === 'Vacated'; 
+
+    // --- HELPER: Convert 24hr time to 12hr format (e.g., "14:30" -> "02:30 PM") ---
+    const convertTime = (timeString) => {
+        if (!timeString) return '';
+        const [hour, minute] = timeString.split(':');
+        const h = parseInt(hour);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const formattedH = h % 12 || 12; 
+        return `${formattedH}:${minute} ${ampm}`;
+    };
+
+    // --- HELPER: Format Date & Time together ---
+    const formatVisitInfo = () => {
+        const date = new Date(booking.moveInDate).toLocaleDateString();
+        const time = booking.visitTime ? convertTime(booking.visitTime) : ''; 
+        return `${date} ${time ? `at ${time}` : ''}`;
+    };
 
     // Helper: Calculate Stay Duration
     const getDuration = () => {
         if (!booking.moveInDate) return 'N/A';
         const start = new Date(booking.moveInDate);
-        const end = new Date(booking.updatedAt); // Assuming updatedAt is when they vacated
+        const end = new Date(booking.updatedAt); 
         
-        // Calculate difference in days
         const diffTime = Math.abs(end - start);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
@@ -24,7 +38,7 @@ const ApplicationCard = ({ booking, user, handleStatusUpdate }) => {
     const getStatusLabel = (status) => {
         if (status === 'Rejected') return 'Closed';
         if (status === 'Booked') return 'Finalized';
-        if (status === 'Vacated') return 'Past Home'; // <--- NEW LABEL
+        if (status === 'Vacated') return 'Past Home'; 
         return status;
     };
 
@@ -33,8 +47,8 @@ const ApplicationCard = ({ booking, user, handleStatusUpdate }) => {
         if (status === 'Pending') return { background: '#fef3c7', color: '#b45309' };
         if (status === 'Visit Scheduled') return { background: '#dbeafe', color: '#1e40af' };
         if (status === 'Booked') return { background: '#dcfce7', color: '#166534' };
-        if (status === 'Vacated') return { background: '#e5e7eb', color: '#374151' }; // Grey for past home
-        return { background: '#f3f4f6', color: '#9ca3af' }; // Light grey for rejected
+        if (status === 'Vacated') return { background: '#e5e7eb', color: '#374151' }; 
+        return { background: '#f3f4f6', color: '#9ca3af' }; 
     };
 
     return (
@@ -58,6 +72,13 @@ const ApplicationCard = ({ booking, user, handleStatusUpdate }) => {
                     <div style={{fontWeight:'bold', fontSize:'1.1rem', color: isActive ? '#000' : '#4b5563'}}>
                         {booking.user?.name}
                     </div>
+
+                    {/* --- NEW: DISPLAY VISIT TIME FOR OWNER --- */}
+                    {isActive && (
+                        <div style={{marginTop:'8px', marginBottom:'8px', color:'#2563eb', fontWeight:'600', background:'#eff6ff', padding:'6px 10px', borderRadius:'6px', border:'1px solid #bfdbfe', display:'inline-block', fontSize:'0.9rem'}}>
+                            📅 Visit: {formatVisitInfo()}
+                        </div>
+                    )}
                     
                     {/* HIDE Phone/Email if it's history/past */}
                     {isActive && <div style={{fontSize:'0.9rem', fontWeight:'600'}}>📞 {booking.user?.phone}</div>}
@@ -82,12 +103,22 @@ const ApplicationCard = ({ booking, user, handleStatusUpdate }) => {
                     {booking.status === 'Pending' && (
                          <div style={{background:'#fff7ed', padding:'10px', borderRadius:'6px', margin:'10px 0', border:'1px solid #fed7aa', color:'#9a3412', fontSize:'0.9rem'}}>
                             ⏳ Waiting for owner to accept visit...
+                            <br/>
+                            {/* --- SHOW TENANT THEIR REQUESTED TIME --- */}
+                            <div style={{marginTop:'5px', fontWeight:'600'}}>
+                                Requested: {formatVisitInfo()}
+                            </div>
                          </div>
                     )}
                     
                     {/* Case 2: Visit/Booked (Show Contact) */}
                     {(booking.status === 'Visit Scheduled' || booking.status === 'Booked') && (
                         <div style={{background:'#f0fdf4', padding:'10px', borderRadius:'6px', margin:'10px 0', border:'1px solid #bbf7d0'}}>
+                            {/* --- SHOW CONFIRMED TIME --- */}
+                            <div style={{marginBottom:'8px', color:'#15803d', fontWeight:'bold', fontSize:'0.95rem', background:'white', padding:'5px', borderRadius:'4px', border:'1px dashed #166534', textAlign:'center'}}>
+                                ✅ Visit Confirmed: <br/> {formatVisitInfo()}
+                            </div>
+
                             <div style={{fontSize:'0.75rem', color:'#166534', fontWeight:'bold', textTransform:'uppercase'}}>Owner Contact</div>
                             <div style={{fontWeight:'bold', color:'#15803d', fontSize:'1.1rem'}}>{booking.property?.owner?.name}</div>
                             <div style={{fontSize:'1rem', fontWeight:'600'}}>📞 {booking.property?.owner?.phone}</div>

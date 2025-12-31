@@ -21,6 +21,7 @@ const PropertyDetails = () => {
 
     // --- BOOKING STATE ---
     const [moveInDate, setMoveInDate] = useState('');
+    const [visitTime, setVisitTime] = useState(''); // --- NEW: TIME STATE ---
     const [message, setMessage] = useState('');
 
     useEffect(() => {
@@ -91,11 +92,21 @@ const PropertyDetails = () => {
 
     const handleBook = async () => {
         if (!user) { alert("Please login to book!"); navigate('/login'); return; }
-        if (!moveInDate || !message) { alert("Please fill details."); return; }
+        
+        // --- UPDATED VALIDATION: Check for Date AND Time ---
+        if (!moveInDate || !visitTime || !message) { alert("Please fill date, time, and message."); return; }
 
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            await API.post('/booking', { propertyId: property._id, moveInDate, message }, config);
+            
+            // --- UPDATED PAYLOAD: Sending visitTime ---
+            await API.post('/booking', { 
+                propertyId: property._id, 
+                moveInDate, 
+                visitTime, 
+                message 
+            }, config);
+
             alert("Request Sent! Check your Dashboard for updates. 🚀");
             navigate('/dashboard'); 
         } catch (error) {
@@ -274,10 +285,36 @@ const PropertyDetails = () => {
                         ) : (
                             <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '12px', padding: '30px' }}>
                                 <h3 style={{ marginBottom: '20px', color: '#0369a1' }}>Interested? Schedule a Visit</h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                                    <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-                                    <input type="text" placeholder="Hi, I'm interested..." value={message} onChange={(e) => setMessage(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
+                                
+                                {/* --- UPDATED: Grid changed to 3 columns to fit Time --- */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                                    
+                                    {/* Date Input */}
+                                    <input 
+                                        type="date" 
+                                        value={moveInDate} 
+                                        onChange={(e) => setMoveInDate(e.target.value)} 
+                                        style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
+                                    />
+                                    
+                                    {/* --- NEW: TIME INPUT --- */}
+                                    <input 
+                                        type="time" 
+                                        value={visitTime} 
+                                        onChange={(e) => setVisitTime(e.target.value)} 
+                                        style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
+                                    />
+
+                                    {/* Message Input */}
+                                    <input 
+                                        type="text" 
+                                        placeholder="Hi, I'm interested..." 
+                                        value={message} 
+                                        onChange={(e) => setMessage(e.target.value)} 
+                                        style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
+                                    />
                                 </div>
+
                                 <button onClick={handleBook} className="btn" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', background: '#2563eb', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold' }}>
                                     {user ? "Send Visit Request" : "Login to Schedule Visit"}
                                 </button>

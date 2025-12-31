@@ -1,16 +1,13 @@
 import ApplicationCard from './ApplicationCard';
 
-const ApplicationsSection = ({ bookings, tab, setTab, user, handleStatusUpdate }) => {
+const ApplicationsSection = ({ bookings, tab, setTab, user, handleStatusUpdate, isIncoming }) => {
     
     // Filter logic
     const filteredBookings = bookings.filter(b => {
-        // ACTIVE TAB
         if (tab === 'Applications') {
             return b.status === 'Pending' || b.status === 'Visit Scheduled';
         }
-        // HISTORY TAB
         if (tab === 'History') {
-            // Includes: Rejected apps, Finalized bookings (if you want them here), and Vacated (Past) homes
             return b.status === 'Rejected' || b.status === 'Booked' || b.status === 'Vacated';
         }
         return false; 
@@ -18,13 +15,17 @@ const ApplicationsSection = ({ bookings, tab, setTab, user, handleStatusUpdate }
 
     return (
         <section>
+            {/* Only show Tabs if we are looking at incoming requests (to separate history) */}
+            {/* For outgoing, we usually just show everything or simplify */}
             <div className="tabs">
                 <div className={`tab-item ${tab==='Applications'?'active':''}`} onClick={()=>setTab('Applications')}>
-                    Applications ({bookings.filter(b => b.status === 'Pending' || b.status === 'Visit Scheduled').length})
+                    Active ({bookings.filter(b => b.status === 'Pending' || b.status === 'Visit Scheduled').length})
                 </div>
-                <div className={`tab-item ${tab==='History'?'active':''}`} onClick={()=>setTab('History')}>
-                    History
-                </div>
+                {isIncoming && (
+                    <div className={`tab-item ${tab==='History'?'active':''}`} onClick={()=>setTab('History')}>
+                        History
+                    </div>
+                )}
             </div>
 
             <div className="card-grid">
@@ -36,7 +37,8 @@ const ApplicationsSection = ({ bookings, tab, setTab, user, handleStatusUpdate }
                             key={booking._id} 
                             booking={booking} 
                             user={user} 
-                            handleStatusUpdate={handleStatusUpdate} 
+                            handleStatusUpdate={handleStatusUpdate}
+                            isIncoming={isIncoming} // <--- PASS THE FLAG DOWN
                         />
                     ))
                 )}

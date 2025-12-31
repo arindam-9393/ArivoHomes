@@ -27,20 +27,20 @@ const Dashboard = () => {
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
       
-      // 1. Fetch Bookings
+      // 1. Fetch ALL Bookings (Incoming & Outgoing)
       const bookingRes = await API.get('/booking', config);
       setBookings(bookingRes.data);
 
-      // 2. Tenant Logic
-      if (user.role !== 'owner') {
-          const myHome = bookingRes.data.find(b => b.status === 'Booked');
-          if (myHome) setActiveRental(myHome);
-      }
+      // 2. Active Rental Logic (For when I am a Tenant)
+      const myHome = bookingRes.data.find(b => 
+          b.user._id === user._id && b.status === 'Booked'
+      );
+      if (myHome) setActiveRental(myHome);
 
-      // 3. Owner Logic
+      // 3. Owner Logic (My Properties)
       if (user.role === 'owner') {
         const propRes = await API.get('/property');
-        // Filter my properties
+        // Filter properties where I am the owner
         const ownerProps = propRes.data.filter(p => {
              const ownerId = p.owner?._id || p.owner; 
              return ownerId === user._id;
@@ -50,7 +50,7 @@ const Dashboard = () => {
     } catch (err) { console.error(err); }
   };
 
-  // --- HANDLERS (Passed down to children) ---
+  // --- HANDLERS ---
   const handleStatusUpdate = async (id, status) => {
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
@@ -78,6 +78,13 @@ const Dashboard = () => {
     } catch { alert("Delete failed"); }
   };
 
+  // --- SPLIT BOOKINGS INTO "RECEIVED" vs "SENT" ---
+  // Received: Bookings where I am the Owner of the property
+  const receivedBookings = bookings.filter(b => b.property?.owner?._id === user._id);
+  
+  // Sent: Bookings where I am the User (Tenant)
+  const sentBookings = bookings.filter(b => b.user?._id === user._id);
+
   return (
     <div className="dashboard-container">
       {/* SIDEBAR */}
@@ -96,29 +103,48 @@ const Dashboard = () => {
       {/* MAIN CONTENT AREA */}
       <main className="main-content">
         
-        {/* 1. TENANT SECTION */}
-        {user.role !== 'owner' && (
-            <TenantSection activeRental={activeRental} />
-        )}
+        {/* 1. CURRENT HOME (If I am renting somewhere) */}
+        <TenantSection activeRental={activeRental} />
 
-        {/* 2. OWNER SECTION */}
+        {/* 2. MY PROPERTIES (If I am an Owner) */}
         {user.role === 'owner' && (
             <OwnerSection 
                 myProperties={myProperties} 
-                bookings={bookings} 
+                bookings={receivedBookings} // Only pass Received bookings here
                 handleVacate={handleVacate} 
                 handleDeleteProperty={handleDeleteProperty} 
             />
         )}
 
-        {/* 3. APPLICATIONS SECTION (Shared) */}
-        <ApplicationsSection 
-            bookings={bookings} 
-            tab={tab} 
-            setTab={setTab} 
-            user={user} 
-            handleStatusUpdate={handleStatusUpdate} 
-        />
+        {/* 3. REQUESTS RECEIVED (Tenants asking ME) */}
+        {user.role === 'owner' && (
+            <div style={{marginTop:'30px'}}>
+                <h3 className="section-header">📥 Requests Received (Tenants)</h3>
+                <ApplicationsSection 
+                    bookings={receivedBookings} 
+                    tab={tab} 
+                    setTab={setTab} 
+                    user={user} 
+                    handleStatusUpdate={handleStatusUpdate} 
+                    isIncoming={true} // Flag to tell Card "I am the Landlord"
+                />
+            </div>
+        )}
+
+        {/* 4. MY REQUESTS (Me asking OTHERS) */}
+        {(user.role !== 'owner' || sentBookings.length > 0) && (
+            <div style={{marginTop:'30px'}}>
+                <h3 className="section-header">📤 My Applications (Outgoing)</h3>
+                <ApplicationsSection 
+                    bookings={sentBookings} 
+                    tab="Applications" // Always show applications here
+                    setTab={()=>{}} // No tabs needed for this small section
+                    user={user} 
+                    handleStatusUpdate={()=>{}} // Cannot update my own sent request status
+                    isIncoming={false} // Flag to tell Card "I am the Visitor"
+                />
+            </div>
+        )}
 
       </main>
     </div>

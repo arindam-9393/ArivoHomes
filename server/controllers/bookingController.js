@@ -31,25 +31,27 @@ const createBooking = async (req, res) => {
 // ... keep the rest of the file exactly the same
 
 // 2. Get Bookings (With Owner/Tenant Details)
+// 2. Get Bookings (Smart: Gets Incoming AND Outgoing)
 const getUserBookings = async (req, res) => {
     try {
-        let bookings;
-        if (req.user.role === 'owner') {
-            const properties = await Property.find({ owner: req.user._id });
-            const propertyIds = properties.map(p => p._id);
-            
-            // Populate Tenant details for the owner
-            bookings = await Booking.find({ property: { $in: propertyIds } })
-                .populate('property')
-                .populate('user', 'name email phone'); 
-        } else {
-            // Populate Owner details for the tenant (Hidden unless booked)
-            bookings = await Booking.find({ user: req.user._id })
-                .populate({
-                    path: 'property',
-                    populate: { path: 'owner', select: 'name email phone' }
-                });
-        }
+        // 1. Find properties owned by this user
+        const myProperties = await Property.find({ owner: req.user._id });
+        const myPropertyIds = myProperties.map(p => p._id);
+
+        // 2. Find ALL related bookings (Incoming OR Outgoing)
+        const bookings = await Booking.find({
+            $or: [
+                { property: { $in: myPropertyIds } }, // Incoming (I am the Landlord)
+                { user: req.user._id }                // Outgoing (I am the Visitor)
+            ]
+        })
+        .populate({
+            path: 'property',
+            populate: { path: 'owner', select: 'name email phone' } // Need owner details
+        })
+        .populate('user', 'name email phone') // Need tenant details
+        .sort({ createdAt: -1 }); // Newest first
+
         res.status(200).json(bookings);
     } catch (error) {
         res.status(500).json({ message: error.message });

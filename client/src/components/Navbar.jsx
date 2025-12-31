@@ -1,17 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     
     // Get user from localStorage
     const user = JSON.parse(localStorage.getItem('user'));
 
+    // --- EFFECT: Lock body scroll when menu is open ---
+    useEffect(() => {
+        if (isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+    }, [isMobileMenuOpen]);
+
     const handleLogout = () => {
         localStorage.removeItem('user');
-        setIsMobileMenuOpen(false); // Close menu on logout
+        setIsMobileMenuOpen(false);
         navigate('/login');
     };
 
@@ -24,9 +33,7 @@ const Navbar = () => {
         }
     };
 
-    // Helper to close menu when a link is clicked
     const closeMenu = () => setIsMobileMenuOpen(false);
-
     const isActive = (path) => location.pathname === path;
 
     return (
@@ -41,8 +48,10 @@ const Navbar = () => {
                     position: sticky;
                     top: 0;
                     z-index: 1000;
-                    background: #ffffff;
-                    border-bottom: 1px solid #e5e7eb;
+                    /* --- DARK PROFESSIONAL BACKGROUND --- */
+                    background: #0f172a; 
+                    border-bottom: 1px solid #1e293b;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
                 }
 
                 .nav-container {
@@ -55,131 +64,185 @@ const Navbar = () => {
                 }
 
                 .nav-logo {
-                    font-size: 1.25rem;
-                    font-weight: 700;
-                    color: #0f172a;
+                    font-size: 1.4rem;
+                    font-weight: 800;
+                    color: #ffffff; /* White Logo */
                     text-decoration: none;
                     letter-spacing: -0.02em;
-                    z-index: 1001; /* Ensure logo stays above mobile menu */
+                    z-index: 1002;
                 }
 
                 /* --- DESKTOP LINKS --- */
                 .nav-links {
                     display: flex;
                     align-items: center;
-                    gap: 28px;
+                    gap: 32px;
                 }
 
                 .nav-link {
                     position: relative;
                     font-size: 0.95rem;
                     font-weight: 500;
-                    color: #475569;
+                    color: #cbd5e1; /* Light Gray Text */
                     text-decoration: none;
                     padding: 6px 0;
-                    transition: color 0.25s ease;
+                    transition: color 0.2s ease;
                 }
 
                 .nav-link::after {
                     content: '';
                     position: absolute;
                     left: 0;
-                    bottom: -6px;
+                    bottom: -4px;
                     width: 0%;
                     height: 2px;
-                    background: #2563eb;
+                    background: #38bdf8; /* Light Blue Accent */
                     transition: width 0.25s ease;
+                    border-radius: 2px;
                 }
 
-                .nav-link:hover { color: #0f172a; }
+                .nav-link:hover { color: #ffffff; }
                 .nav-link:hover::after { width: 100%; }
 
-                .nav-link.active { color: #0f172a; font-weight: 600; }
+                .nav-link.active { color: #ffffff; font-weight: 600; }
                 .nav-link.active::after { width: 100%; }
 
-                /* --- BUTTONS --- */
+                /* --- BUTTONS (Adapted for Dark Mode) --- */
                 .btn-outline {
-                    padding: 8px 18px;
-                    border-radius: 999px;
-                    border: 1px solid #cbd5e1;
+                    padding: 8px 20px;
+                    border-radius: 8px;
+                    border: 1px solid #475569;
                     background: transparent;
                     font-size: 0.9rem;
                     font-weight: 500;
-                    color: #0f172a;
+                    color: #e2e8f0;
                     cursor: pointer;
                     transition: all 0.2s ease;
                 }
-                .btn-outline:hover { background: #f8fafc; }
+                .btn-outline:hover { 
+                    border-color: #cbd5e1; 
+                    background: rgba(255, 255, 255, 0.1);
+                    color: white;
+                }
 
                 .btn-danger {
-                    padding: 8px 18px;
-                    border-radius: 999px;
-                    border: 1px solid #fecaca;
-                    background: #ffffff;
-                    color: #b91c1c;
+                    padding: 8px 20px;
+                    border-radius: 8px;
+                    border: 1px solid #7f1d1d;
+                    background: #450a0a;
+                    color: #fca5a5;
                     font-size: 0.9rem;
                     font-weight: 600;
                     cursor: pointer;
                     transition: all 0.2s ease;
                 }
-                .btn-danger:hover { background: #fee2e2; }
+                .btn-danger:hover { 
+                    background: #7f1d1d; 
+                    color: white;
+                }
 
                 .divider {
                     width: 1px;
-                    height: 20px;
-                    background: #e5e7eb;
+                    height: 24px;
+                    background: #334155;
                 }
 
-                /* --- MOBILE HAMBURGER & DRAWER --- */
+                /* --- MOBILE HAMBURGER --- */
                 .hamburger {
                     display: none;
                     font-size: 1.5rem;
                     cursor: pointer;
-                    color: #0f172a;
-                    z-index: 1001;
+                    color: #ffffff; /* White Icon */
+                    z-index: 1002;
+                    padding: 5px;
                 }
 
-                /* HIDE DESKTOP LINKS ON MOBILE */
+                /* --- MOBILE DRAWER & OVERLAY --- */
+                .mobile-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.6); /* Darker dimming */
+                    backdrop-filter: blur(4px);
+                    z-index: 2000;
+                    opacity: 0;
+                    animation: fadeIn 0.3s forwards;
+                }
+
+                .side-drawer {
+                    position: fixed;
+                    top: 0;
+                    right: 0;
+                    width: 75%;
+                    max-width: 300px;
+                    height: 100vh;
+                    
+                    /* DARK GLASSMORPHISM */
+                    background: rgba(15, 23, 42, 0.95); /* #0f172a with opacity */
+                    backdrop-filter: blur(16px);
+                    -webkit-backdrop-filter: blur(16px);
+                    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+                    border-left: 1px solid rgba(255,255,255,0.1);
+                    
+                    z-index: 2001;
+                    padding: 80px 24px 24px 24px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 24px;
+                    
+                    transform: translateX(100%);
+                    animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+
+                .close-btn {
+                    position: absolute;
+                    top: 24px;
+                    right: 24px;
+                    font-size: 1.5rem;
+                    background: none;
+                    border: none;
+                    color: #94a3b8;
+                    cursor: pointer;
+                    padding: 5px;
+                    transition: 0.2s;
+                }
+                .close-btn:hover { color: white; }
+
+                /* Mobile specific link styles */
+                .side-drawer .nav-link {
+                    font-size: 1.1rem;
+                    padding: 12px 0;
+                    border-bottom: 1px solid rgba(255,255,255,0.05);
+                    width: 100%;
+                    display: block;
+                    color: #cbd5e1;
+                }
+                .side-drawer .nav-link:hover { color: white; padding-left: 10px; }
+
+                .side-drawer .btn-outline,
+                .side-drawer .btn-danger {
+                    width: 100%;
+                    padding: 14px;
+                    text-align: center;
+                    margin-top: 10px;
+                }
+                
+                .side-drawer .divider { display: none; }
+
                 @media (max-width: 900px) {
-                    .nav-links { display: none; } /* Hide normal menu */
-                    .hamburger { display: block; } /* Show hamburger */
-                    
-                    /* The Slide-Down Menu */
-                    .mobile-menu {
-                        position: absolute;
-                        top: 100%; /* Right below navbar */
-                        left: 0;
-                        width: 100%;
-                        background: white;
-                        border-bottom: 1px solid #e5e7eb;
-                        padding: 20px;
-                        display: flex;
-                        flex-direction: column;
-                        gap: 20px;
-                        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                        animation: slideDown 0.3s ease-out;
-                    }
-
-                    .mobile-menu .nav-link {
-                        font-size: 1.1rem;
-                        padding: 10px 0;
-                        border-bottom: 1px solid #f1f5f9;
-                        width: 100%;
-                    }
-                    
-                    .mobile-menu .divider { display: none; }
-                    
-                    .mobile-menu .btn-outline, 
-                    .mobile-menu .btn-danger {
-                        width: 100%;
-                        text-align: center;
-                        padding: 12px;
-                    }
+                    .nav-links { display: none; }
+                    .hamburger { display: block; }
                 }
 
-                @keyframes slideDown {
-                    from { opacity: 0; transform: translateY(-10px); }
-                    to { opacity: 1; transform: translateY(0); }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideIn {
+                    from { transform: translateX(100%); }
+                    to { transform: translateX(0); }
                 }
             `}</style>
 
@@ -189,15 +252,12 @@ const Navbar = () => {
                         ArivoHomes
                     </Link>
 
-                    {/* 1. HAMBURGER ICON (Visible only on Mobile) */}
-                    <div 
-                        className="hamburger" 
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    >
-                        {isMobileMenuOpen ? '✕' : '☰'}
+                    {/* Hamburger Icon */}
+                    <div className="hamburger" onClick={() => setIsMobileMenuOpen(true)}>
+                        ☰
                     </div>
 
-                    {/* 2. DESKTOP MENU (Hidden on Mobile via CSS) */}
+                    {/* Desktop Menu */}
                     <div className="nav-links">
                         <NavItems 
                             isActive={isActive} 
@@ -206,27 +266,32 @@ const Navbar = () => {
                             handleLogout={handleLogout} 
                         />
                     </div>
-
-                    {/* 3. MOBILE MENU DRAWER (Visible only when Open) */}
-                    {isMobileMenuOpen && (
-                        <div className="mobile-menu">
-                            <NavItems 
-                                isActive={isActive} 
-                                user={user} 
-                                handleListProperty={handleListProperty} 
-                                handleLogout={handleLogout}
-                                isMobile={true} 
-                                closeMenu={closeMenu}
-                            />
-                        </div>
-                    )}
                 </div>
             </nav>
+
+            {/* --- MOBILE SIDE DRAWER --- */}
+            {isMobileMenuOpen && (
+                <>
+                    <div className="mobile-overlay" onClick={closeMenu} />
+                    <div className="side-drawer">
+                        <button className="close-btn" onClick={closeMenu}>✕</button>
+                        
+                        <NavItems 
+                            isActive={isActive} 
+                            user={user} 
+                            handleListProperty={handleListProperty} 
+                            handleLogout={handleLogout}
+                            isMobile={true} 
+                            closeMenu={closeMenu}
+                        />
+                    </div>
+                </>
+            )}
         </>
     );
 };
 
-// --- REUSABLE COMPONENT FOR LINKS (Avoids duplicating code) ---
+// --- REUSABLE LINKS ---
 const NavItems = ({ isActive, user, handleListProperty, handleLogout, isMobile, closeMenu }) => {
     return (
         <>
@@ -276,7 +341,7 @@ const NavItems = ({ isActive, user, handleListProperty, handleLogout, isMobile, 
                 </>
             ) : (
                 <>
-                    {!isMobile && <div className="divider" />} {/* Hide divider on mobile */}
+                    {!isMobile && <div className="divider" />}
 
                     <Link 
                         to="/login" 

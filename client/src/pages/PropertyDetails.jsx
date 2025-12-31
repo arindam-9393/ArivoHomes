@@ -37,7 +37,7 @@ const PropertyDetails = () => {
                 if (data.galleryImages && data.galleryImages.length > 0) {
                     images.push(...data.galleryImages);
                 }
-                setAllImages(images.filter(img => img)); // Remove empty/null if any
+                setAllImages(images.filter(img => img));
 
                 setLoading(false);
             } catch (error) {
@@ -48,7 +48,7 @@ const PropertyDetails = () => {
         fetchProperty();
     }, [id]);
 
-    // --- KEYBOARD NAVIGATION FOR LIGHTBOX ---
+    // --- KEYBOARD NAVIGATION ---
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (!isLightboxOpen) return;
@@ -93,13 +93,10 @@ const PropertyDetails = () => {
 
     const handleBook = async () => {
         if (!user) { alert("Please login to book!"); navigate('/login'); return; }
-        
-        // Validation
         if (!moveInDate || !visitTime || !message) { alert("Please fill date, time, and message."); return; }
 
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
-            
             await API.post('/booking', { 
                 propertyId: property._id, 
                 moveInDate, 
@@ -122,10 +119,13 @@ const PropertyDetails = () => {
     if (loading) return <h2 style={{textAlign:'center', marginTop:'80px', color:'#64748b'}}>Loading...</h2>;
     if (!property) return <h2 style={{textAlign:'center', marginTop:'80px', color:'#ef4444'}}>Property not found</h2>;
 
+    // --- RENTED LOGIC ---
     const isRented = property.status === 'Rented';
-    // Handle both populated object or raw ID string for owner
     const ownerId = property.owner?._id || property.owner;
-    const isOwner = user && (user.role === 'owner' || true) && (user._id === ownerId); // Removed strict role check in case schema varies
+    const isOwner = user && (user.role === 'owner' || true) && (user._id === ownerId);
+
+    // Filter style for Rented state
+    const imgFilter = isRented ? 'grayscale(100%) contrast(90%)' : 'none';
 
     return (
         <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '0 20px' }}>
@@ -134,20 +134,14 @@ const PropertyDetails = () => {
             {isLightboxOpen && (
                 <div style={lightboxOverlayStyle} onClick={closeLightbox}>
                     <button style={closeBtnStyle}>×</button>
-                    
-                    {/* Previous Button */}
                     <button style={{...navBtnStyle, left: '20px'}} onClick={prevImage}>❮</button>
-
                     <img 
                         src={allImages[currentImageIndex]} 
                         alt="Full Screen" 
-                        style={lightboxImgStyle} 
+                        style={{...lightboxImgStyle, filter: imgFilter}} 
                         onClick={(e) => e.stopPropagation()} 
                     />
-
-                    {/* Next Button */}
                     <button style={{...navBtnStyle, right: '20px'}} onClick={nextImage}>❯</button>
-                    
                     <div style={counterStyle}>{currentImageIndex + 1} / {allImages.length}</div>
                 </div>
             )}
@@ -156,27 +150,36 @@ const PropertyDetails = () => {
             
             <div style={{ background: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                 
-                {/* --- HERO IMAGE (Clickable) --- */}
+                {/* --- HERO IMAGE --- */}
                 <div style={{ height: '450px', position: 'relative', background: '#f1f5f9', cursor: 'pointer' }} onClick={() => openLightbox(0)}>
                     <img 
                         src={property.mainImage || "https://via.placeholder.com/800x400"} 
                         alt={property.title} 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', filter: isRented ? 'grayscale(80%)' : 'none' }} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', filter: imgFilter, transition: '0.3s' }} 
                     />
                     
-                    {/* View Photos Button Overlay */}
+                    {/* View Photos Button */}
                     <div style={{position: 'absolute', bottom: '20px', right: '20px', background: 'rgba(255,255,255,0.9)', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}>
                         📷 View {allImages.length} Photos
                     </div>
 
+                    {/* --- PROFESSIONAL RENTED OVERLAY --- */}
                     {isRented && (
-                        <div style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%', background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                            <h1 style={{color:'white', fontSize:'4rem', border:'4px solid white', padding:'10px 40px', transform:'rotate(-10deg)'}}>RENTED</h1>
+                        <div style={{ 
+                            position:'absolute', top:0, left:0, width:'100%', height:'100%', 
+                            background:'rgba(0,0,0,0.6)', // Dark overlay
+                            display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                            backdropFilter: 'blur(2px)' 
+                        }}>
+                            <div style={{ border: '2px solid white', padding: '15px 40px', color: 'white', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold', fontSize: '1.5rem', background: 'rgba(0,0,0,0.5)' }}>
+                                Property Rented
+                            </div>
+                            <p style={{ color: '#e2e8f0', marginTop: '10px', fontSize: '0.9rem' }}>This listing is no longer available</p>
                         </div>
                     )}
                 </div>
 
-                {/* --- PHOTO GALLERY STRIP (Clickable) --- */}
+                {/* --- GALLERY STRIP --- */}
                 {property.galleryImages?.length > 0 && (
                     <div style={{ display: 'flex', gap: '10px', padding: '15px', overflowX: 'auto', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                         {property.galleryImages.map((img, idx) => (
@@ -184,11 +187,8 @@ const PropertyDetails = () => {
                                 key={idx} 
                                 src={img} 
                                 alt={`gallery-${idx}`} 
-                                // Index + 1 because 0 is mainImage
                                 onClick={() => openLightbox(idx + 1)} 
-                                style={{ height: '100px', width: '150px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer', border: '1px solid #cbd5e1', transition: '0.2s' }} 
-                                onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-                                onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                                style={{ height: '100px', width: '150px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer', border: '1px solid #cbd5e1', filter: imgFilter, opacity: isRented ? 0.7 : 1 }} 
                             />
                         ))}
                     </div>
@@ -197,39 +197,33 @@ const PropertyDetails = () => {
                 <div style={{ padding: '30px' }}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:'20px', marginBottom: '20px' }}>
                         <div style={{ flex: 1 }}>
-                            <h1 style={{ color: '#1e293b', fontSize:'2.2rem', marginBottom:'8px' }}>{property.title}</h1>
+                            <div style={{display:'flex', alignItems:'center', gap:'15px', marginBottom:'8px'}}>
+                                <h1 style={{ color: isRented ? '#94a3b8' : '#1e293b', fontSize:'2.2rem', margin:0 }}>{property.title}</h1>
+                                {isRented && (
+                                    <span style={{background:'#334155', color:'white', padding:'4px 12px', borderRadius:'6px', fontSize:'0.8rem', fontWeight:'bold', textTransform:'uppercase'}}>Rented</span>
+                                )}
+                            </div>
                             
-                            {property.status !== 'Rented' && (
+                            {!isRented && (
                                 <div style={{ display: 'inline-block', background: '#fff1f2', color: '#be123c', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '10px', border: '1px solid #fda4af' }}>
                                     🔥 High Demand: People are currently viewing this
                                 </div>
                             )}
 
                             <p style={{ color: '#64748b', fontSize: '1.1rem' }}>📍 {property.location}</p>
-
-                            {!isOwner && (
-                                <div style={{ marginTop: '15px', padding: '15px', background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '12px', display: 'inline-block' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#64748b', fontWeight: '600' }}>
-                                        <span>🔒 Owner Details Locked</span>
-                                    </div>
-                                    <p style={{ margin: '5px 0 0 0', fontSize: '0.9rem', color: '#94a3b8' }}>
-                                        Schedule a visit below. Once the owner accepts, you will see their phone number.
-                                    </p>
-                                </div>
-                            )}
-
                         </div>
-                        <div style={{ textAlign:'right', background: '#f8fafc', padding: '15px 25px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                            <h2 style={{ color: '#2563eb', fontSize:'2rem', margin:0, fontWeight: '800' }}>₹{property.price.toLocaleString()}</h2>
+                        
+                        <div style={{ textAlign:'right', background: isRented ? '#f1f5f9' : '#f8fafc', padding: '15px 25px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                            <h2 style={{ color: isRented ? '#64748b' : '#2563eb', fontSize:'2rem', margin:0, fontWeight: '800', textDecoration: isRented ? 'line-through' : 'none' }}>₹{property.price.toLocaleString()}</h2>
                             <span style={{ fontSize:'0.9rem', color:'#64748b' }}>per month</span>
                         </div>
                     </div>
 
-                    {/* --- TAGS (NEWLY ADDED) --- */}
+                    {/* --- TAGS --- */}
                     {property.tags && property.tags.length > 0 && (
                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
                             {property.tags.map((tag, i) => (
-                                <span key={i} style={{ background: '#e0f2fe', color: '#0369a1', padding: '5px 12px', borderRadius: '15px', fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                                <span key={i} style={{ background: isRented ? '#f1f5f9' : '#e0f2fe', color: isRented ? '#94a3b8' : '#0369a1', padding: '5px 12px', borderRadius: '15px', fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
                                     #{tag}
                                 </span>
                             ))}
@@ -240,23 +234,11 @@ const PropertyDetails = () => {
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingBottom: '30px', borderBottom: '1px solid #e2e8f0' }}>
                         <div style={badgeStyle}>🏠 {property.category}</div>
                         <div style={badgeStyle}>🛋️ {property.furnishingStatus || 'Unfurnished'}</div>
-                        <div style={{ ...badgeStyle, background: '#dcfce7', color: '#166534' }}>
+                        <div style={{ ...badgeStyle, background: isRented ? '#f1f5f9' : '#dcfce7', color: isRented ? '#64748b' : '#166534' }}>
                             👥 {property.tenantPreference === 'All' ? 'Family & Bachelors' : property.tenantPreference}
                         </div>
                         <div style={badgeStyle}>🅿️ {property.parking}</div>
                     </div>
-
-                    {/* FURNISHINGS */}
-                    {property.furnishingItems?.length > 0 && (
-                        <div style={{ marginTop: '30px' }}>
-                            <h3 style={sectionTitleStyle}>🛏️ Included Furnishings</h3>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                                {property.furnishingItems.map(item => (
-                                    <span key={item} style={{ background: '#f0f9ff', color: '#0284c7', padding: '8px 16px', borderRadius: '8px', fontWeight: '600', border: '1px solid #bae6fd' }}>✓ {item}</span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
 
                     {/* AMENITIES */}
                     {property.amenities?.length > 0 && (
@@ -264,8 +246,8 @@ const PropertyDetails = () => {
                             <h3 style={sectionTitleStyle}>🏢 Society Amenities</h3>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '15px' }}>
                                 {property.amenities.map(amenity => (
-                                    <div key={amenity} style={{ background: '#f8fafc', padding: '15px', borderRadius: '10px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                                        <span style={{ display:'block', fontSize:'1.8rem', marginBottom:'5px' }}>{getAmenityIcon(amenity)}</span>
+                                    <div key={amenity} style={{ background: '#f8fafc', padding: '15px', borderRadius: '10px', textAlign: 'center', border: '1px solid #e2e8f0', opacity: isRented ? 0.6 : 1 }}>
+                                        <span style={{ display:'block', fontSize:'1.8rem', marginBottom:'5px', filter: isRented ? 'grayscale(100%)' : 'none' }}>{getAmenityIcon(amenity)}</span>
                                         <span style={{ fontSize:'0.9rem', color:'#475569', fontWeight:'600' }}>{amenity}</span>
                                     </div>
                                 ))}
@@ -289,52 +271,34 @@ const PropertyDetails = () => {
                                 </div>
                             </div>
                         ) : isRented ? (
-                            <div style={{ padding: '30px', background: '#fef2f2', border: '2px dashed #f87171', borderRadius: '12px', textAlign:'center' }}>
-                                <h2 style={{color:'#b91c1c', marginBottom:'10px'}}>⛔ Not Available</h2>
-                                <p style={{color:'#7f1d1d', fontSize:'1.1rem'}}>This property has already been rented out.</p>
-                                <button onClick={() => navigate('/properties')} className="btn" style={{marginTop:'15px', background:'#b91c1c', color:'white', padding:'10px 20px', borderRadius:'6px', border:'none', cursor:'pointer' }}>Find Similar Properties</button>
+                            // --- PROFESSIONAL RENTED CARD ---
+                            <div style={{ padding: '40px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', textAlign:'center' }}>
+                                <div style={{fontSize:'3rem', marginBottom:'10px', filter: 'grayscale(100%)'}}>🔒</div>
+                                <h2 style={{color:'#475569', marginBottom:'10px', fontSize:'1.5rem'}}>Property No Longer Available</h2>
+                                <p style={{color:'#64748b', fontSize:'1rem', maxWidth:'500px', margin:'0 auto'}}>
+                                    This property has been rented out and is off the market. You can explore similar properties in the same area.
+                                </p>
+                                <button onClick={() => navigate('/properties')} style={{marginTop:'25px', background:'#334155', color:'white', padding:'12px 25px', borderRadius:'6px', border:'none', cursor:'pointer', fontWeight:'600' }}>
+                                    View Other Properties
+                                </button>
                             </div>
                         ) : (
                             <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '12px', padding: '30px' }}>
                                 <h3 style={{ marginBottom: '20px', color: '#0369a1' }}>Interested? Schedule a Visit</h3>
-                                
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-                                    
-                                    {/* Date Input */}
                                     <div style={{display:'flex', flexDirection:'column'}}>
                                         <label style={{fontSize:'0.85rem', fontWeight:'600', marginBottom:'5px', color:'#0369a1'}}>Date</label>
-                                        <input 
-                                            type="date" 
-                                            value={moveInDate} 
-                                            onChange={(e) => setMoveInDate(e.target.value)} 
-                                            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
-                                        />
+                                        <input type="date" value={moveInDate} onChange={(e) => setMoveInDate(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                                     </div>
-                                    
-                                    {/* Time Input */}
                                     <div style={{display:'flex', flexDirection:'column'}}>
                                         <label style={{fontSize:'0.85rem', fontWeight:'600', marginBottom:'5px', color:'#0369a1'}}>Time</label>
-                                        <input 
-                                            type="time" 
-                                            value={visitTime} 
-                                            onChange={(e) => setVisitTime(e.target.value)} 
-                                            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
-                                        />
+                                        <input type="time" value={visitTime} onChange={(e) => setVisitTime(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                                     </div>
-
-                                    {/* Message Input */}
                                     <div style={{display:'flex', flexDirection:'column', gridColumn: '1 / -1'}}>
                                         <label style={{fontSize:'0.85rem', fontWeight:'600', marginBottom:'5px', color:'#0369a1'}}>Message</label>
-                                        <input 
-                                            type="text" 
-                                            placeholder="Hi, I'm interested..." 
-                                            value={message} 
-                                            onChange={(e) => setMessage(e.target.value)} 
-                                            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
-                                        />
+                                        <input type="text" placeholder="Hi, I'm interested..." value={message} onChange={(e) => setMessage(e.target.value)} style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
                                     </div>
                                 </div>
-
                                 <button onClick={handleBook} className="btn" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', background: '#2563eb', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', transition: '0.2s' }}>
                                     {user ? "Send Visit Request" : "Login to Schedule Visit"}
                                 </button>
@@ -348,7 +312,7 @@ const PropertyDetails = () => {
     );
 };
 
-// --- STYLES FOR LIGHTBOX & BADGES ---
+// --- STYLES ---
 const lightboxOverlayStyle = {
     position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
     background: 'rgba(0, 0, 0, 0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center',

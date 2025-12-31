@@ -1,38 +1,42 @@
 const mongoose = require('mongoose');
 
-const propertySchema = mongoose.Schema({
-    owner: {
+const PropertySchema = new mongoose.Schema({
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: 'User'
+        ref: "User",
+        required: true
     },
     title: { type: String, required: true },
-    description: { type: String, required: true },
     location: { type: String, required: true },
     price: { type: Number, required: true },
-    type: { type: String, required: true }, // 'rent' or 'sale'
-    category: { type: String, required: true }, // 'Apartment', 'Villa', etc.
+    category: { type: String, default: "Apartment" },
+    description: { type: String, required: true },
     
-    // --- NEW IMAGE LOGIC ---
-    mainImage: { 
+    // --- ADD THESE NEW FIELDS ---
+    tags: { 
+        type: [String], 
+        default: [] 
+    },
+    furnishingStatus: { 
         type: String, 
-        required: true 
+        default: "Unfurnished" 
     },
-    galleryImages: {
-        type: [String], // Array of URLs
-        required: false
+    furnishingItems: { 
+        type: [String], 
+        default: [] 
     },
-    // -----------------------
+    amenities: { 
+        type: [String], 
+        default: [] 
+    },
+    // ---------------------------
 
-    bedrooms: { type: Number, required: true },
-    bathrooms: { type: Number, required: true },
-    furnished: { type: Boolean, default: false },
-    parking: {
-        type: String, // <--- Change from Boolean to String
-        required: true,
-    },
-
-    // ... rest of your schema
+    tenantPreference: { type: String, default: "All" },
+    parking: { type: String, default: "None" },
+    
+    mainImage: { type: String, required: true },
+    galleryImages: { type: [String], default: [] },
+    
 }, { timestamps: true });
 
-module.exports = mongoose.model('Property', propertySchema);
+module.exports = mongoose.model("Property", PropertySchema);

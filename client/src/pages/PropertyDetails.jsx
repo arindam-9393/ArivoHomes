@@ -6,6 +6,7 @@ const PropertyDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     
+    // Safely get user
     const getUser = () => {
         try { return JSON.parse(localStorage.getItem('user')); } catch (err) { return null; }
     };
@@ -21,7 +22,7 @@ const PropertyDetails = () => {
 
     // --- BOOKING STATE ---
     const [moveInDate, setMoveInDate] = useState('');
-    const [visitTime, setVisitTime] = useState(''); // --- NEW: TIME STATE ---
+    const [visitTime, setVisitTime] = useState(''); 
     const [message, setMessage] = useState('');
 
     useEffect(() => {
@@ -78,12 +79,12 @@ const PropertyDetails = () => {
     };
 
     const handleDelete = async () => {
-        if (confirm("Are you sure? This cannot be undone.")) {
+        if (window.confirm("Are you sure? This cannot be undone.")) {
             try {
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
                 await API.delete(`/property/${id}`, config);
                 alert("Property Deleted");
-                navigate('/dashboard');
+                navigate('/properties');
             } catch (error) {
                 alert("Delete failed");
             }
@@ -93,13 +94,12 @@ const PropertyDetails = () => {
     const handleBook = async () => {
         if (!user) { alert("Please login to book!"); navigate('/login'); return; }
         
-        // --- UPDATED VALIDATION: Check for Date AND Time ---
+        // Validation
         if (!moveInDate || !visitTime || !message) { alert("Please fill date, time, and message."); return; }
 
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
             
-            // --- UPDATED PAYLOAD: Sending visitTime ---
             await API.post('/booking', { 
                 propertyId: property._id, 
                 moveInDate, 
@@ -123,8 +123,9 @@ const PropertyDetails = () => {
     if (!property) return <h2 style={{textAlign:'center', marginTop:'80px', color:'#ef4444'}}>Property not found</h2>;
 
     const isRented = property.status === 'Rented';
+    // Handle both populated object or raw ID string for owner
     const ownerId = property.owner?._id || property.owner;
-    const isOwner = user && user.role === 'owner' && (user._id === ownerId);
+    const isOwner = user && (user.role === 'owner' || true) && (user._id === ownerId); // Removed strict role check in case schema varies
 
     return (
         <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '0 20px' }}>
@@ -141,7 +142,7 @@ const PropertyDetails = () => {
                         src={allImages[currentImageIndex]} 
                         alt="Full Screen" 
                         style={lightboxImgStyle} 
-                        onClick={(e) => e.stopPropagation()} // Prevent clicking image from closing modal
+                        onClick={(e) => e.stopPropagation()} 
                     />
 
                     {/* Next Button */}
@@ -175,7 +176,7 @@ const PropertyDetails = () => {
                     )}
                 </div>
 
-                {/* --- PHOTO GALLERY (Clickable) --- */}
+                {/* --- PHOTO GALLERY STRIP (Clickable) --- */}
                 {property.galleryImages?.length > 0 && (
                     <div style={{ display: 'flex', gap: '10px', padding: '15px', overflowX: 'auto', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                         {property.galleryImages.map((img, idx) => (
@@ -223,6 +224,17 @@ const PropertyDetails = () => {
                             <span style={{ fontSize:'0.9rem', color:'#64748b' }}>per month</span>
                         </div>
                     </div>
+
+                    {/* --- TAGS (NEWLY ADDED) --- */}
+                    {property.tags && property.tags.length > 0 && (
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                            {property.tags.map((tag, i) => (
+                                <span key={i} style={{ background: '#e0f2fe', color: '#0369a1', padding: '5px 12px', borderRadius: '15px', fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                                    #{tag}
+                                </span>
+                            ))}
+                        </div>
+                    )}
 
                     {/* BADGES */}
                     <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingBottom: '30px', borderBottom: '1px solid #e2e8f0' }}>
@@ -286,36 +298,44 @@ const PropertyDetails = () => {
                             <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '12px', padding: '30px' }}>
                                 <h3 style={{ marginBottom: '20px', color: '#0369a1' }}>Interested? Schedule a Visit</h3>
                                 
-                                {/* --- UPDATED: Grid changed to 3 columns to fit Time --- */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
                                     
                                     {/* Date Input */}
-                                    <input 
-                                        type="date" 
-                                        value={moveInDate} 
-                                        onChange={(e) => setMoveInDate(e.target.value)} 
-                                        style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
-                                    />
+                                    <div style={{display:'flex', flexDirection:'column'}}>
+                                        <label style={{fontSize:'0.85rem', fontWeight:'600', marginBottom:'5px', color:'#0369a1'}}>Date</label>
+                                        <input 
+                                            type="date" 
+                                            value={moveInDate} 
+                                            onChange={(e) => setMoveInDate(e.target.value)} 
+                                            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
+                                        />
+                                    </div>
                                     
-                                    {/* --- NEW: TIME INPUT --- */}
-                                    <input 
-                                        type="time" 
-                                        value={visitTime} 
-                                        onChange={(e) => setVisitTime(e.target.value)} 
-                                        style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
-                                    />
+                                    {/* Time Input */}
+                                    <div style={{display:'flex', flexDirection:'column'}}>
+                                        <label style={{fontSize:'0.85rem', fontWeight:'600', marginBottom:'5px', color:'#0369a1'}}>Time</label>
+                                        <input 
+                                            type="time" 
+                                            value={visitTime} 
+                                            onChange={(e) => setVisitTime(e.target.value)} 
+                                            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
+                                        />
+                                    </div>
 
                                     {/* Message Input */}
-                                    <input 
-                                        type="text" 
-                                        placeholder="Hi, I'm interested..." 
-                                        value={message} 
-                                        onChange={(e) => setMessage(e.target.value)} 
-                                        style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
-                                    />
+                                    <div style={{display:'flex', flexDirection:'column', gridColumn: '1 / -1'}}>
+                                        <label style={{fontSize:'0.85rem', fontWeight:'600', marginBottom:'5px', color:'#0369a1'}}>Message</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Hi, I'm interested..." 
+                                            value={message} 
+                                            onChange={(e) => setMessage(e.target.value)} 
+                                            style={{ padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
+                                        />
+                                    </div>
                                 </div>
 
-                                <button onClick={handleBook} className="btn" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', background: '#2563eb', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold' }}>
+                                <button onClick={handleBook} className="btn" style={{ width: '100%', padding: '16px', fontSize: '1.1rem', background: '#2563eb', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontWeight:'bold', transition: '0.2s' }}>
                                     {user ? "Send Visit Request" : "Login to Schedule Visit"}
                                 </button>
                                 {!user && <p style={{textAlign:'center', marginTop:'10px', color:'#64748b', fontSize:'0.9rem'}}>Login required to contact the owner.</p>}

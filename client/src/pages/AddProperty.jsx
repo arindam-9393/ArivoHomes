@@ -8,9 +8,14 @@ const AddProperty = () => {
 
     // --- STATE MANAGEMENT ---
     const [formData, setFormData] = useState({
-        title: '', location: '', price: '', category: 'Apartment',
-        description: '', tags: '',
-        tenantPreference: 'All', parking: 'None', 
+        title: '', 
+        location: '', 
+        price: '', 
+        category: 'Apartment',
+        description: '', 
+        tags: '', // Input is string, sent as Array
+        tenantPreference: 'All', 
+        parking: 'None', 
         amenities: [],
         furnishingStatus: 'Unfurnished',
         furnishingItems: [],
@@ -39,9 +44,12 @@ const AddProperty = () => {
     const handleCheckbox = (e, field) => {
         const { value, checked } = e.target;
         setFormData(prev => {
-            const list = prev[field];
-            if (checked) return { ...prev, [field]: [...list, value] };
-            return { ...prev, [field]: list.filter(item => item !== value) };
+            const list = prev[field] || [];
+            if (checked) {
+                return { ...prev, [field]: [...list, value] };
+            } else {
+                return { ...prev, [field]: list.filter(item => item !== value) };
+            }
         });
     };
 
@@ -80,38 +88,29 @@ const AddProperty = () => {
     const storeImage = async (file) => {
         return new Promise(async (resolve, reject) => {
             try {
-                // Step 1: Get Signature from YOUR Backend
-                // Note: Ensure this URL matches your backend route exactly!
+                // 1. Get Signature
                 const config = { headers: { Authorization: `Bearer ${user.token}` } };
                 const { data: signData } = await API.get('/property/upload-signature', config);
 
-                // Step 2: Prepare Upload Data
+                // 2. Prepare Upload
                 const formData = new FormData();
                 formData.append("file", file);
-                
-                // IMPORTANT: PASTE YOUR REAL API KEY HERE!
                 formData.append("api_key", import.meta.env.VITE_CLOUDINARY_API_KEY);
-                
                 formData.append("timestamp", signData.timestamp);
                 formData.append("signature", signData.signature);
-                formData.append("folder", "arivo_homes"); // Must match backend folder
+                formData.append("folder", "arivo_homes");
 
-                // Step 3: Upload to Cloudinary
+                // 3. Upload to Cloudinary
                 const res = await fetch(
                     "https://api.cloudinary.com/v1_1/dtrpcnpkm/image/upload",
-                    {
-                        method: "POST",
-                        body: formData,
-                    }
+                    { method: "POST", body: formData }
                 );
 
                 const uploadedImage = await res.json();
                 
                 if (uploadedImage.secure_url) {
-                    console.log("Upload Success:", uploadedImage.secure_url);
                     resolve(uploadedImage.secure_url);
                 } else {
-                    console.error("Cloudinary Error:", uploadedImage);
                     reject(uploadedImage);
                 }
             } catch (error) {
@@ -154,18 +153,17 @@ const AddProperty = () => {
             setUploading(false);
             alert("Images Uploaded Successfully! You can now publish.");
             
-            // Clear file inputs visually
             setMainFile(null);
             setGalleryFiles([]);
 
         } catch (err) {
             console.error(err);
-            setImageError("Image upload failed. Check console for details.");
+            setImageError("Image upload failed.");
             setUploading(false);
         }
     };
 
-    // --- SUBMIT TO BACKEND ---
+    // --- SUBMIT TO BACKEND (FIXED) ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         
@@ -178,19 +176,44 @@ const AddProperty = () => {
         try {
             const config = { headers: { Authorization: `Bearer ${user.token}` } };
             
+            // --- CONSTRUCT PAYLOAD EXPLICITLY ---
+            // This ensures Tags, Furnishing, and Amenities are mapped correctly.
             const payload = { 
-                ...formData, 
-                tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
-                price: Number(formData.price)
+                title: formData.title,
+                description: formData.description,
+                location: formData.location,
+                price: Number(formData.price),
+                category: formData.category,
+                
+                // Tags: Convert "Tag1, Tag2" string -> ["Tag1", "Tag2"] array
+                tags: formData.tags 
+                      ? formData.tags.split(',').map(t => t.trim()).filter(t => t.length > 0) 
+                      : [],
+                
+                tenantPreference: formData.tenantPreference,
+                parking: formData.parking,
+                
+                amenities: formData.amenities, // Send array directly
+
+                furnishingStatus: formData.furnishingStatus,
+                // Logic: If Unfurnished, force empty array. Else send items.
+                furnishingItems: formData.furnishingStatus === 'Unfurnished' 
+                                 ? [] 
+                                 : formData.furnishingItems,
+
+                mainImage: formData.mainImage,
+                galleryImages: formData.galleryImages
             }; 
             
+            console.log("Submitting Payload:", payload); // Check console to verify data
+
             await API.post('/property', payload, config);
             
             alert("Property Listed Successfully! 🎉");
             navigate('/properties');
         } catch (error) {
-            console.error(error);
-            alert("Failed to list property. Check console.");
+            console.error("Backend Error:", error);
+            alert("Failed to list property. Check console for details.");
         } finally {
             setLoading(false);
         }
@@ -206,19 +229,19 @@ const AddProperty = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                     <div className="form-group">
                         <label style={{fontWeight:'600'}}>Title</label>
-                        <input type="text" name="title" onChange={handleChange} required placeholder="e.g. Spacious 2BHK" style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}/>
+                        <input type="text" name="title" value={formData.title} onChange={handleChange} required placeholder="e.g. Spacious 2BHK" style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}/>
                     </div>
                     <div className="form-group">
                         <label style={{fontWeight:'600'}}>Rent (₹/mo)</label>
-                        <input type="number" name="price" onChange={handleChange} required style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}/>
+                        <input type="number" name="price" value={formData.price} onChange={handleChange} required style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}/>
                     </div>
                     <div className="form-group">
                         <label style={{fontWeight:'600'}}>Location</label>
-                        <input type="text" name="location" onChange={handleChange} required style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}/>
+                        <input type="text" name="location" value={formData.location} onChange={handleChange} required style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}/>
                     </div>
                     <div className="form-group">
                         <label style={{fontWeight:'600'}}>Category</label>
-                        <select name="category" onChange={handleChange} style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}>
+                        <select name="category" value={formData.category} onChange={handleChange} style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}>
                             <option value="Apartment">Apartment</option>
                             <option value="PG">PG / Hostel</option>
                             <option value="Independent House">Independent House</option>
@@ -232,7 +255,7 @@ const AddProperty = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
                     <div className="form-group">
                         <label style={{fontWeight:'600'}}>Tenant Preference</label>
-                        <select name="tenantPreference" onChange={handleChange} style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}>
+                        <select name="tenantPreference" value={formData.tenantPreference} onChange={handleChange} style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}>
                             <option value="All">Anyone</option>
                             <option value="Family">Family Only</option>
                             <option value="Bachelor">Bachelors Only</option>
@@ -240,7 +263,7 @@ const AddProperty = () => {
                     </div>
                     <div className="form-group">
                         <label style={{fontWeight:'600'}}>Parking</label>
-                        <select name="parking" onChange={handleChange} style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}>
+                        <select name="parking" value={formData.parking} onChange={handleChange} style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}>
                             <option value="None">None</option>
                             <option value="Bike">Bike Only</option>
                             <option value="Car">Car Only</option>
@@ -253,7 +276,7 @@ const AddProperty = () => {
                 <h4 style={{borderBottom:'1px solid #eee', paddingBottom:'10px', margin:'30px 0 20px', color:'#334155'}}>2. Furnishing Status</h4>
                 <div style={{ marginBottom: '20px' }}>
                     <label style={{fontWeight:'600', display:'block', marginBottom:'10px'}}>Furnishing Level</label>
-                    <select name="furnishingStatus" onChange={handleChange} style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px', fontWeight:'bold', color:'#2563eb'}}>
+                    <select name="furnishingStatus" value={formData.furnishingStatus} onChange={handleChange} style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px', fontWeight:'bold', color:'#2563eb'}}>
                         <option value="Unfurnished">Unfurnished (Empty)</option>
                         <option value="Semi-Furnished">Semi-Furnished</option>
                         <option value="Fully Furnished">Fully Furnished</option>
@@ -299,11 +322,11 @@ const AddProperty = () => {
                 <h4 style={{borderBottom:'1px solid #eee', paddingBottom:'10px', margin:'30px 0 20px', color:'#334155'}}>4. Media & Info</h4>
                 <div className="form-group" style={{ marginBottom: '20px' }}>
                     <label style={{fontWeight:'600'}}>Description</label>
-                    <textarea name="description" onChange={handleChange} required rows="4" style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}></textarea>
+                    <textarea name="description" value={formData.description} onChange={handleChange} required rows="4" style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}}></textarea>
                 </div>
                 <div className="form-group" style={{ marginBottom: '20px' }}>
                     <label style={{fontWeight:'600'}}>Tags</label>
-                    <input type="text" name="tags" placeholder='e.g. Near Metro, Highway View' onChange={handleChange} style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}} />
+                    <input type="text" name="tags" value={formData.tags} placeholder='e.g. Near Metro, Highway View' onChange={handleChange} style={{width:'100%', padding:'10px', border:'1px solid #cbd5e1', borderRadius:'6px'}} />
                 </div>
 
                 {/* --- IMAGE UPLOAD SECTION (Cloudinary) --- */}

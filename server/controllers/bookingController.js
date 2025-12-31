@@ -59,21 +59,31 @@ const getUserBookings = async (req, res) => {
 };
 
 // 3. Update Status (Visit vs Finalize)
+// 3. Update Status (With Debugging Logs)
 const updateBookingStatus = async (req, res) => {
     try {
         const { status } = req.body; 
         const bookingId = req.params.id;
 
-        console.log(`Updating Booking: ${bookingId} to Status: ${status}`); // Debug Log
+        console.log(`[DEBUG] Request to update Booking: ${bookingId} to '${status}'`);
+        console.log(`[DEBUG] User Requesting: ${req.user._id}`);
 
         const booking = await Booking.findById(bookingId).populate('property');
 
         if (!booking) {
+            console.log(`[DEBUG] Error: Booking not found`);
             return res.status(404).json({ message: "Booking not found" });
         }
 
-        // Check if the user is actually the Owner
-        if (booking.property.owner.toString() !== req.user._id.toString()) {
+        // DEBUG: Check Ownership
+        const ownerId = booking.property.owner.toString();
+        const userId = req.user._id.toString();
+        
+        console.log(`[DEBUG] Property Owner: ${ownerId}`);
+        console.log(`[DEBUG] Current User:   ${userId}`);
+
+        if (ownerId !== userId) {
+            console.log(`[DEBUG] Error: User is NOT the owner`);
             return res.status(401).json({ message: "Not authorized. You are not the owner." });
         }
 
@@ -81,36 +91,33 @@ const updateBookingStatus = async (req, res) => {
         if (status === 'Visit Scheduled') {
             booking.status = 'Visit Scheduled';
             await booking.save();
+            console.log(`[DEBUG] Success: Status updated to Visit Scheduled`);
             return res.status(200).json({ message: "Visit Scheduled Successfully!" });
         }
 
-        // --- SCENARIO 2: FINALIZE TENANT (The Lock) ---
+        // --- SCENARIO 2: FINALIZE TENANT ---
         if (status === 'Booked') {
-            // 1. Update this booking
             booking.status = 'Booked';
             await booking.save();
 
-            // 2. Update Property to 'Rented'
             const property = await Property.findById(booking.property._id);
             property.status = 'Rented';
             await property.save();
 
-            // 3. Reject ALL other applications for this property
-            // We find bookings for this property that are NOT the one we just accepted
+            // Reject others
             await Booking.updateMany(
-                { 
-                    property: property._id, 
-                    _id: { $ne: bookingId } 
-                },
+                { property: property._id, _id: { $ne: bookingId } },
                 { status: 'Rejected' }
             );
 
-            return res.status(200).json({ message: "Tenant Finalized! Property Locked." });
+            console.log(`[DEBUG] Success: Property Rented`);
+            return res.status(200).json({ message: "Tenant Finalized!" });
         }
 
-        // --- SCENARIO 3: REJECT / OTHER ---
+        // --- SCENARIO 3: REJECT/OTHER ---
         booking.status = status;
         await booking.save();
+        console.log(`[DEBUG] Success: Status updated to ${status}`);
         res.status(200).json({ message: `Status updated to ${status}` });
 
     } catch (error) {

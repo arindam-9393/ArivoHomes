@@ -6,7 +6,7 @@ const bookingSchema = mongoose.Schema({
     moveInDate: { type: Date, required: true }, // Acts as Visit Date
     
     // --- NEW FIELD: VISIT TIME ---
-    visitTime: { type: String, required: true }, 
+    visitTime: { type: String, required: true },
     
     moveOutDate: { type: Date },
     message: { type: String, required: true },

@@ -240,9 +240,6 @@ cloudinary.config({
 // @desc    Get all properties (Optimized for Speed)
 // @route   GET /property
 // @access  Public
-// @desc    Get all properties (Optimized for Speed)
-// @route   GET /property
-// @access  Public
 const getProperties = async (req, res) => {
     try {
         const { 
@@ -299,7 +296,6 @@ const getProperties = async (req, res) => {
             query.furnishingItems = { $all: itemsList }; 
         }
 
-        // --- FIX IS HERE: Added 'owner' and 'status' ---
         const properties = await Property.find(query)
             .select('title price location mainImage category type bedrooms bathrooms tenantPreference parking furnishingStatus furnishingItems createdAt owner status') 
             .sort({ createdAt: -1 });
@@ -419,11 +415,41 @@ const getUploadSignature = (req, res) => {
   res.status(200).json({ timestamp, signature });
 };
 
+// @desc    Vacate a property (Reset to Available)
+// @route   PUT /property/:id/vacate
+// @access  Private (Owner only)
+const vacateProperty = async (req, res) => {
+    try {
+        const property = await Property.findById(req.params.id);
+
+        if (!property) {
+            return res.status(404).json({ message: 'Property not found' });
+        }
+
+        // 1. Check if the user is the Owner
+        if (property.owner.toString() !== req.user.id) {
+            return res.status(401).json({ message: 'Not authorized to vacate this property' });
+        }
+
+        // 2. Perform the Vacate Action
+        property.status = 'Available'; // Reset status
+        property.tenant = null;        // Remove the tenant
+        
+        await property.save();
+
+        res.status(200).json({ message: 'Property vacated successfully', property });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error: Could not vacate property' });
+    }
+};
+
 module.exports = {
   getProperties,
   getProperty,
   createProperty,
   updateProperty,
   deleteProperty,
-  getUploadSignature
+  getUploadSignature,
+  vacateProperty // <--- ✅ Added export
 };

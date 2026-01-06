@@ -228,6 +228,7 @@
 
 
 const Property = require('../models/Property');
+const Booking = require('../models/Booking'); // <--- ✅ Added this import
 const cloudinary = require('cloudinary').v2;
 
 // Configure Cloudinary
@@ -415,9 +416,6 @@ const getUploadSignature = (req, res) => {
   res.status(200).json({ timestamp, signature });
 };
 
-// @desc    Vacate a property (Reset to Available)
-// @route   PUT /property/:id/vacate
-// @access  Private (Owner only)
 // @desc    Vacate a property (Reset to Available & Close Booking)
 // @route   PUT /property/:id/vacate
 // @access  Private (Owner only)
@@ -436,6 +434,7 @@ const vacateProperty = async (req, res) => {
 
         // 2. Find the ACTIVE Booking for this property
         // We look for a booking that is currently 'Booked'
+        // This requires the Booking model imported at the top
         const activeBooking = await Booking.findOne({ 
             property: req.params.id, 
             status: 'Booked' 
@@ -467,5 +466,5 @@ module.exports = {
   updateProperty,
   deleteProperty,
   getUploadSignature,
-  vacateProperty // <--- ✅ Added export
+  vacateProperty
 };

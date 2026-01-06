@@ -76,8 +76,8 @@ const Footer = () => {
           <div style={{ display: 'flex', gap: '15px', marginBottom: '30px' }}>
             <a href="#" className="social-icon"><FaFacebookF /></a>
             <a href="#" className="social-icon"><FaTwitter /></a>
-            <a href="#" className="social-icon"><FaInstagram /></a>
-            <a href="#" className="social-icon"><FaLinkedinIn /></a>
+            <a href="https://www.instagram.com/arivohomes/" className="social-icon"><FaInstagram /></a>
+            <a href="https://www.linkedin.com/company/arivo-homes/about/?viewAsMember=true" className="social-icon"><FaLinkedinIn /></a>
           </div>
 
           <h4 style={{ color: 'white', marginBottom: '10px' }}>Download App</h4>

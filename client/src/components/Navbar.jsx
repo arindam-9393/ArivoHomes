@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
+// 1. IMPORT THE LOGO HERE
+import logo from '../assets/logo.png'; 
+
 const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     
-    // Get user from localStorage
     const user = JSON.parse(localStorage.getItem('user'));
 
-    // --- EFFECT: Lock body scroll when menu is open ---
     useEffect(() => {
         if (isMobileMenuOpen) {
             document.body.style.overflow = 'hidden';
@@ -48,7 +49,6 @@ const Navbar = () => {
                     position: sticky;
                     top: 0;
                     z-index: 1000;
-                    /* --- DARK PROFESSIONAL BACKGROUND --- */
                     background: #0f172a; 
                     border-bottom: 1px solid #1e293b;
                     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -57,22 +57,36 @@ const Navbar = () => {
                 .nav-container {
                     max-width: 1200px;
                     margin: 0 auto;
-                    padding: 16px 24px;
+                    padding: 8px 24px; /* Reduced vertical padding slightly so navbar isn't huge */
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                 }
 
+                /* --- UPDATED LOGO CSS START --- */
                 .nav-logo {
-                    font-size: 1.4rem;
-                    font-weight: 800;
-                    color: #ffffff; /* White Logo */
+                    display: flex;
+                    align-items: center;
                     text-decoration: none;
-                    letter-spacing: -0.02em;
                     z-index: 1002;
                 }
 
-                /* --- DESKTOP LINKS --- */
+                .logo-image {
+                    height: 90px; /* INCREASED SIZE SIGNIFICANTLY */
+                    width: auto;
+                    object-fit: contain;
+                    
+                    /* This turns the black logo white */
+                    filter: brightness(0) invert(1);
+                    
+                    transition: transform 0.2s ease;
+                }
+                
+                .logo-image:hover {
+                    transform: scale(1.05);
+                }
+                /* --- UPDATED LOGO CSS END --- */
+
                 .nav-links {
                     display: flex;
                     align-items: center;
@@ -83,7 +97,7 @@ const Navbar = () => {
                     position: relative;
                     font-size: 0.95rem;
                     font-weight: 500;
-                    color: #cbd5e1; /* Light Gray Text */
+                    color: #cbd5e1;
                     text-decoration: none;
                     padding: 6px 0;
                     transition: color 0.2s ease;
@@ -96,7 +110,7 @@ const Navbar = () => {
                     bottom: -4px;
                     width: 0%;
                     height: 2px;
-                    background: #38bdf8; /* Light Blue Accent */
+                    background: #38bdf8;
                     transition: width 0.25s ease;
                     border-radius: 2px;
                 }
@@ -107,7 +121,6 @@ const Navbar = () => {
                 .nav-link.active { color: #ffffff; font-weight: 600; }
                 .nav-link.active::after { width: 100%; }
 
-                /* --- BUTTONS (Adapted for Dark Mode) --- */
                 .btn-outline {
                     padding: 8px 20px;
                     border-radius: 8px;
@@ -138,7 +151,7 @@ const Navbar = () => {
                 }
                 .btn-danger:hover { 
                     background: #7f1d1d; 
-                    color: white;
+                    color: white; 
                 }
 
                 .divider {
@@ -147,24 +160,22 @@ const Navbar = () => {
                     background: #334155;
                 }
 
-                /* --- MOBILE HAMBURGER --- */
                 .hamburger {
                     display: none;
                     font-size: 1.5rem;
                     cursor: pointer;
-                    color: #ffffff; /* White Icon */
+                    color: #ffffff;
                     z-index: 1002;
                     padding: 5px;
                 }
 
-                /* --- MOBILE DRAWER & OVERLAY --- */
                 .mobile-overlay {
                     position: fixed;
                     top: 0;
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    background: rgba(0, 0, 0, 0.6); /* Darker dimming */
+                    background: rgba(0, 0, 0, 0.6);
                     backdrop-filter: blur(4px);
                     z-index: 2000;
                     opacity: 0;
@@ -178,20 +189,16 @@ const Navbar = () => {
                     width: 75%;
                     max-width: 300px;
                     height: 100vh;
-                    
-                    /* DARK GLASSMORPHISM */
-                    background: rgba(15, 23, 42, 0.95); /* #0f172a with opacity */
+                    background: rgba(15, 23, 42, 0.95);
                     backdrop-filter: blur(16px);
                     -webkit-backdrop-filter: blur(16px);
                     box-shadow: -10px 0 30px rgba(0,0,0,0.5);
                     border-left: 1px solid rgba(255,255,255,0.1);
-                    
                     z-index: 2001;
                     padding: 80px 24px 24px 24px;
                     display: flex;
                     flex-direction: column;
                     gap: 24px;
-                    
                     transform: translateX(100%);
                     animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
@@ -210,7 +217,6 @@ const Navbar = () => {
                 }
                 .close-btn:hover { color: white; }
 
-                /* Mobile specific link styles */
                 .side-drawer .nav-link {
                     font-size: 1.1rem;
                     padding: 12px 0;
@@ -248,16 +254,15 @@ const Navbar = () => {
 
             <nav className="navbar">
                 <div className="nav-container">
+                    
                     <Link to="/" className="nav-logo" onClick={closeMenu}>
-                        ArivoHomes
+                        <img src={logo} alt="ArivoHomes Logo" className="logo-image" />
                     </Link>
 
-                    {/* Hamburger Icon */}
                     <div className="hamburger" onClick={() => setIsMobileMenuOpen(true)}>
                         ☰
                     </div>
 
-                    {/* Desktop Menu */}
                     <div className="nav-links">
                         <NavItems 
                             isActive={isActive} 
@@ -269,7 +274,6 @@ const Navbar = () => {
                 </div>
             </nav>
 
-            {/* --- MOBILE SIDE DRAWER --- */}
             {isMobileMenuOpen && (
                 <>
                     <div className="mobile-overlay" onClick={closeMenu} />
@@ -291,7 +295,6 @@ const Navbar = () => {
     );
 };
 
-// --- REUSABLE LINKS ---
 const NavItems = ({ isActive, user, handleListProperty, handleLogout, isMobile, closeMenu }) => {
     return (
         <>

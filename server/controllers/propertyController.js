@@ -418,6 +418,9 @@ const getUploadSignature = (req, res) => {
 // @desc    Vacate a property (Reset to Available)
 // @route   PUT /property/:id/vacate
 // @access  Private (Owner only)
+// @desc    Vacate a property (Reset to Available & Close Booking)
+// @route   PUT /property/:id/vacate
+// @access  Private (Owner only)
 const vacateProperty = async (req, res) => {
     try {
         const property = await Property.findById(req.params.id);
@@ -431,13 +434,26 @@ const vacateProperty = async (req, res) => {
             return res.status(401).json({ message: 'Not authorized to vacate this property' });
         }
 
-        // 2. Perform the Vacate Action
-        property.status = 'Available'; // Reset status
-        property.tenant = null;        // Remove the tenant
+        // 2. Find the ACTIVE Booking for this property
+        // We look for a booking that is currently 'Booked'
+        const activeBooking = await Booking.findOne({ 
+            property: req.params.id, 
+            status: 'Booked' 
+        });
+
+        // 3. Close the Booking (Mark as Vacated)
+        if (activeBooking) {
+            activeBooking.status = 'Vacated'; // This moves it to "History"
+            await activeBooking.save();
+        }
+
+        // 4. Reset the Property
+        property.status = 'Available'; 
+        property.tenant = null;        
         
         await property.save();
 
-        res.status(200).json({ message: 'Property vacated successfully', property });
+        res.status(200).json({ message: 'Property vacated and booking closed', property });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server Error: Could not vacate property' });

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   FaFacebookF,
   FaTwitter,
@@ -9,6 +9,25 @@ import {
 } from 'react-icons/fa';
 
 const Footer = () => {
+  const navigate = useNavigate();
+
+  // --- HANDLER: Check if user is owner before listing ---
+  const handleListPropertyClick = (e) => {
+    e.preventDefault(); // Stop default link behavior
+    
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    if (!user) {
+      alert("Please login as an Owner to list a property.");
+      navigate('/login');
+    } else if (user.role !== 'owner') {
+      alert("Only Owners can list properties. Please login with an Owner account.");
+      navigate('/login');
+    } else {
+      navigate('/add-property');
+    }
+  };
+
   return (
     <footer style={{ background: '#0f172a', color: '#cbd5e1', paddingTop: '60px', marginTop: 'auto' }}>
       <div
@@ -50,7 +69,14 @@ const Footer = () => {
           <ul style={{ listStyle: 'none', padding: 0 }}>
             <li><Link to="/about" className="footer-link">About Us</Link></li>
             <li><Link to="/contact" className="footer-link">Contact Us</Link></li>
-            <li><Link to="/add-property" className="footer-link">List Your Property</Link></li>
+            
+            {/* UPDATED LINK WITH CLICK HANDLER */}
+            <li>
+                <a href="/add-property" onClick={handleListPropertyClick} className="footer-link" style={{cursor: 'pointer'}}>
+                    List Your Property
+                </a>
+            </li>
+            
             <li><Link to="/faqs" className="footer-link">FAQs</Link></li>
           </ul>
         </div>
@@ -105,7 +131,7 @@ const Footer = () => {
                 fontSize: '0.85rem',
                 textAlign: 'center',
                 flex: 1,
-                opacity:0.6,
+                opacity: 0.6,
                 cursor: 'not-allowed'
               }}
             >

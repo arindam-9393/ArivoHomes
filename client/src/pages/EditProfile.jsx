@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import API from '../axiosConfig'; // Keep this for your Backend calls
-import axios from 'axios';        // 👈 ADD THIS: Fresh axios for Cloudinary
+import API from '../axiosConfig'; 
+import axios from 'axios'; 
 import { useNavigate } from 'react-router-dom';
+import imageCompression from 'browser-image-compression'; // <--- 1. IMPORT THIS
 
 const EditProfile = () => {
     const navigate = useNavigate();
@@ -37,37 +38,47 @@ const EditProfile = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // 4. Handle Image Selection & Upload
+    // 4. Handle Image Selection & Upload (OPTIMIZED)
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         setUploading(true);
         try {
-            // A. Get Signature from Backend (Keep using API here because we need auth)
+            // --- A. COMPRESSION STEP ---
+            const options = {
+                maxSizeMB: 0.5,          // Max size 0.5MB (500KB is plenty for profile pics)
+                maxWidthOrHeight: 800,   // Max dimension 800px (Profile pics don't need 4k)
+                useWebWorker: true
+            };
+            
+            console.log(`Original size: ${file.size / 1024 / 1024} MB`);
+            const compressedFile = await imageCompression(file, options);
+            console.log(`Compressed size: ${compressedFile.size / 1024 / 1024} MB`);
+            // ---------------------------
+
+            // B. Get Signature from Backend
             const { data: signData } = await API.get('/user/sign-upload', {
                 headers: { Authorization: `Bearer ${user.token}` }
             });
 
-            // B. Prepare Cloudinary Payload
+            // C. Prepare Cloudinary Payload (Using Compressed File)
             const uploadData = new FormData();
-            uploadData.append("file", file);
+            uploadData.append("file", compressedFile); // <--- Use compressedFile
             uploadData.append("api_key", import.meta.env.VITE_CLOUDINARY_API_KEY); 
             uploadData.append("timestamp", signData.timestamp);
             uploadData.append("signature", signData.signature);
             uploadData.append("folder", "user_profiles");
 
-            // C. Upload to Cloudinary
+            // D. Upload to Cloudinary
             const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dtrpcnpkm'; 
             
-            // 🚨 THE FIX IS HERE: Use 'axios' instead of 'API' 👇
-            // Standard axios doesn't send cookies by default, so Cloudinary will accept it.
             const res = await axios.post(
                 `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, 
                 uploadData
             );
 
-            // D. Update Local State (Preview)
+            // E. Update Local State (Preview)
             setFormData(prev => ({ ...prev, photo: res.data.secure_url }));
 
         } catch (error) {
@@ -84,7 +95,6 @@ const EditProfile = () => {
         setLoading(true);
 
         try {
-            // Keep using API here (We need to send cookies/token to YOUR backend)
             const { data: updatedUser } = await API.put(
                 '/user/profile',
                 {

@@ -60,13 +60,20 @@ const Dashboard = () => {
     } catch (err) { alert('Update Failed'); }
   };
 
+  // 🚨 THIS WAS THE BROKEN FUNCTION. IT IS NOW FIXED. 🚨
   const handleVacate = async (propertyId) => {
     if(!confirm("Is the tenant leaving? Property will be available again.")) return;
     try {
         const config = { headers: { Authorization: `Bearer ${user.token}` } };
-        await API.put(`/booking/vacate`, { propertyId }, config);
+        
+        // ✅ FIXED: Using the Property Route with ID in the URL
+        await API.put(`/property/${propertyId}/vacate`, {}, config);
+        
         window.location.reload();
-    } catch { alert("Failed to vacate"); }
+    } catch (error) { 
+        console.error(error);
+        alert("Failed to vacate"); 
+    }
   };
 
   const handleDeleteProperty = async (id) => {

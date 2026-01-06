@@ -1,6 +1,19 @@
 import { Link } from 'react-router-dom';
 
 const OwnerSection = ({ myProperties, bookings, handleVacate, handleDeleteProperty }) => {
+  
+  // --- HELPER: Request small, optimized image (300px width) ---
+  const getOptimizedUrl = (url) => {
+    if (!url) return 'https://via.placeholder.com/300x200';
+    if (url.includes('cloudinary.com')) {
+        // w_300: Resize to 300px width
+        // f_auto: WebP format
+        // q_auto: Optimized quality
+        return url.replace('/upload/', '/upload/w_300,f_auto,q_auto/');
+    }
+    return url;
+  };
+
   return (
     <section>
         <div className="section-header">My Properties</div>
@@ -17,10 +30,12 @@ const OwnerSection = ({ myProperties, bookings, handleVacate, handleDeleteProper
                 return (
                     <div key={p._id} className="card">
                         <div style={{position:'relative'}}>
+                            {/* --- OPTIMIZED IMAGE --- */}
                             <img 
-                                src={p.mainImage || 'https://via.placeholder.com/300x200'} 
+                                src={getOptimizedUrl(p.mainImage)} 
                                 className="prop-img" 
                                 alt="property"
+                                loading="lazy" 
                             />
                             <span style={{ position:'absolute', top:'10px', left:'10px' }} 
                                   className={`badge ${isRented ? 'badge-rented' : 'badge-available'}`}>
@@ -46,7 +61,14 @@ const OwnerSection = ({ myProperties, bookings, handleVacate, handleDeleteProper
                         ) : (
                             /* CASE B: AVAILABLE - Show Edit/Delete */
                             <div className="btn-row">
-                                <Link to={`/edit-property/${p._id}`} className="btn btn-outline" style={{textAlign:'center', textDecoration:'none'}}>Edit</Link>
+                                {/* --- UPDATED EDIT BUTTON STYLE --- */}
+                                <Link 
+                                    to={`/edit-property/${p._id}`} 
+                                    className="btn" 
+                                    style={{textAlign:'center', textDecoration:'none', background:'#2563eb', color:'white'}}
+                                >
+                                    ✏️ Edit
+                                </Link>
                                 <button onClick={()=>handleDeleteProperty(p._id)} className="btn btn-red" style={{background:'#fee2e2', color:'#b91c1c'}}>Delete</button>
                             </div>
                         )}

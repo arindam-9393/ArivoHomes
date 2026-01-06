@@ -1,14 +1,25 @@
 const TenantSection = ({ activeRental }) => {
     if (!activeRental) return null;
   
+    // --- HELPER: Request optimized image (400px width) ---
+    const getOptimizedUrl = (url) => {
+        if (!url) return 'https://via.placeholder.com/300x200';
+        if (url.includes('cloudinary.com')) {
+            return url.replace('/upload/', '/upload/w_400,f_auto,q_auto/');
+        }
+        return url;
+    };
+
     return (
       <div style={{ marginBottom: '40px' }}>
           <h2 className="section-header">🎉 My Current Home</h2>
           <div className="card" style={{ flexDirection: 'row', gap: '20px', alignItems: 'center' }}>
+              {/* --- OPTIMIZED IMAGE --- */}
               <img 
-                  src={activeRental.property.mainImage || 'https://via.placeholder.com/300x200'} 
+                  src={getOptimizedUrl(activeRental.property.mainImage)} 
                   style={{ width: '250px', height: '180px', objectFit: 'cover', borderRadius: '8px' }} 
                   alt="My Home"
+                  loading="lazy"
               />
               <div style={{ flex: 1 }}>
                   <h3 style={{ margin: '0 0 10px 0', fontSize: '1.4rem' }}>{activeRental.property.title}</h3>

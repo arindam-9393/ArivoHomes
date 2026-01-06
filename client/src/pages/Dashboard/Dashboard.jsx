@@ -137,10 +137,10 @@ const Dashboard = () => {
                 <h3 className="section-header">📤 My Applications (Outgoing)</h3>
                 <ApplicationsSection 
                     bookings={sentBookings} 
-                    tab="Applications" // Always show applications here
-                    setTab={()=>{}} // No tabs needed for this small section
+                    tab="Applications" 
+                    setTab={()=>{}} 
                     user={user} 
-                    handleStatusUpdate={()=>{}} // Cannot update my own sent request status
+                    handleStatusUpdate={()=>{}} 
                     isIncoming={false} // Flag to tell Card "I am the Visitor"
                 />
             </div>

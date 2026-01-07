@@ -1,6 +1,6 @@
 const Booking = require('../models/Booking');
 const Property = require('../models/Property');
-const Notification = require('../models/Notification'); // <--- Ensure this file exists!
+const Notification = require('../models/Notification'); 
 const sendEmail = require('../utils/sendEmail'); 
 
 // ==========================================
@@ -10,24 +10,23 @@ const createBooking = async (req, res) => {
     try {
         const { propertyId, moveInDate, visitTime, message } = req.body;
         
-        // 1. Fetch Property AND Owner details
+        // Fetch Property AND Owner details
         const property = await Property.findById(propertyId).populate('owner');
         
         if (!property) {
             return res.status(404).json({ message: "Property not found" });
         }
 
-        // 🛑 ZOMBIE CHECK: If the owner was deleted, stop here to prevent crash
+        // 🛑 ZOMBIE CHECK
         if (!property.owner) {
-            console.error("❌ ERROR: Property has no owner (Zombie Property)");
-            return res.status(400).json({ message: "This property is invalid (No Owner). Please choose another." });
+            return res.status(400).json({ message: "This property is invalid (No Owner)." });
         }
 
+        // Block booking if already rented
         if (property.status === 'Rented') {
             return res.status(400).json({ message: "Property is already rented!" });
         }
 
-        // 2. Create Booking
         const booking = await Booking.create({
             property: propertyId,
             user: req.user._id,
@@ -37,9 +36,7 @@ const createBooking = async (req, res) => {
             status: 'Pending'
         });
 
-        // --- 🔔 NOTIFICATION SYSTEM ---
-        
-        // A. Database Notification (Bell Icon)
+        // 🔔 Database Notification
         await Notification.create({
             user: property.owner._id,
             message: `New Visit Request for ${property.title} by ${req.user.name}`,
@@ -47,7 +44,7 @@ const createBooking = async (req, res) => {
             relatedId: booking._id
         });
 
-        // B. Email Notification (Brevo)
+        // 📧 Email Notification
         try {
             await sendEmail({
                 email: property.owner.email,
@@ -65,20 +62,19 @@ const createBooking = async (req, res) => {
                     <a href="https://arivohomes.onrender.com/dashboard">Go to Dashboard</a>
                 `
             });
-            console.log(`✅ Email sent to owner: ${property.owner.email}`);
         } catch (emailError) {
-            console.error("⚠️ Email failed (Notification saved anyway):", emailError.message);
+            console.error("⚠️ Email failed:", emailError.message);
         }
 
         res.status(201).json(booking);
     } catch (error) {
-        console.error("❌ CREATE BOOKING ERROR:", error); // <--- This will show in your terminal now
+        console.error("❌ CREATE BOOKING ERROR:", error);
         res.status(500).json({ message: error.message });
     }
 };
 
 // ==========================================
-// 2. Get Bookings
+// 2. Get All User Bookings (Received & Sent)
 // ==========================================
 const getUserBookings = async (req, res) => {
     try {
@@ -106,7 +102,7 @@ const getUserBookings = async (req, res) => {
 };
 
 // ==========================================
-// 3. Update Status (Notify Both Parties)
+// 3. Update Status (Finalize / Schedule / Reject)
 // ==========================================
 const updateBookingStatus = async (req, res) => {
     try {
@@ -114,8 +110,8 @@ const updateBookingStatus = async (req, res) => {
         const bookingId = req.params.id;
 
         const booking = await Booking.findById(bookingId)
-            .populate('user') // Tenant
-            .populate({ path: 'property', populate: { path: 'owner' } }); // Owner
+            .populate('user') 
+            .populate({ path: 'property', populate: { path: 'owner' } }); 
 
         if (!booking) return res.status(404).json({ message: "Booking not found" });
 
@@ -133,14 +129,12 @@ const updateBookingStatus = async (req, res) => {
             booking.status = 'Visit Scheduled';
             await booking.save();
 
-            // 🔔 Notify Tenant (In-App)
             await Notification.create({
                 user: tenant._id,
-                message: `Visit Confirmed for ${propertyTitle}! Check email for details.`,
+                message: `Visit Confirmed for ${propertyTitle}!`,
                 type: 'success'
             });
 
-            // 📧 Email Tenant
             sendEmail({
                 email: tenant.email,
                 subject: `✅ Visit Confirmed: ${propertyTitle}`,
@@ -150,54 +144,51 @@ const updateBookingStatus = async (req, res) => {
             return res.status(200).json({ message: "Visit Scheduled Successfully!" });
         }
 
-        // --- SCENARIO B: FINALIZE TENANT ---
+        // --- SCENARIO B: FINALIZE TENANT (RENTED) ---
         if (status === 'Booked') {
+            // 1. Update Booking
             booking.status = 'Booked';
             await booking.save();
 
+            // 2. Update Property Status to RENTED
             const property = await Property.findById(booking.property._id);
-            property.status = 'Rented';
-            await property.save();
+            if (property) {
+                property.status = 'Rented'; // This requires your Property.js to have the status field!
+                await property.save();
+                console.log(`✅ DATABASE: Property ${property.title} set to Rented.`);
+            }
 
-            // Reject others
+            // 3. Reject other seekers for this property
             await Booking.updateMany(
-                { property: property._id, _id: { $ne: bookingId } },
+                { property: property._id, _id: { $ne: bookingId }, status: 'Pending' },
                 { status: 'Rejected' }
             );
 
-            // 🔔 Notify Tenant
             await Notification.create({
                 user: tenant._id,
-                message: `🎉 You got the home! ${propertyTitle} is yours.`,
+                message: `🎉 Congratulations! ${propertyTitle} is yours.`,
                 type: 'success'
             });
 
-            // 📧 Email Tenant
             sendEmail({
                 email: tenant.email,
-                subject: `🎉 Congratulations! New Home: ${propertyTitle}`,
+                subject: `🎉 New Home: ${propertyTitle}`,
                 html: `<h3>You got the home! 🏠</h3><p>You are the finalized tenant for <strong>${propertyTitle}</strong>.</p>`
             }).catch(e => console.log("Email fail:", e.message));
 
             return res.status(200).json({ message: "Tenant Finalized!" });
         }
 
-        // --- SCENARIO C: REJECT ---
+        // --- SCENARIO C: REJECT / OTHERS ---
         booking.status = status; 
         await booking.save();
 
         if (status === 'Rejected') {
             await Notification.create({
                 user: tenant._id,
-                message: `Update: Request for ${propertyTitle} was not accepted.`,
+                message: `Request for ${propertyTitle} was not accepted.`,
                 type: 'error'
             });
-
-            sendEmail({
-                email: tenant.email,
-                subject: `Update on ${propertyTitle}`,
-                html: `<p>The owner could not proceed with your request for <strong>${propertyTitle}</strong>.</p>`
-            }).catch(e => console.log("Email fail:", e.message));
         }
 
         res.status(200).json({ message: `Status updated to ${status}` });
@@ -219,9 +210,11 @@ const vacateProperty = async (req, res) => {
         if (!property) return res.status(404).json({ message: "Property not found" });
         if (property.owner.toString() !== req.user._id.toString()) return res.status(401).json({ message: "Not authorized" });
 
+        // Reset to Available
         property.status = 'Available';
         await property.save();
 
+        // Update booking history
         const activeBooking = await Booking.findOne({ property: propertyId, status: 'Booked' });
         if (activeBooking) {
             activeBooking.status = 'Vacated';

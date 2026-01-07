@@ -421,41 +421,36 @@ const getUploadSignature = (req, res) => {
 // @access  Private (Owner only)
 const vacateProperty = async (req, res) => {
     try {
-        const property = await Property.findById(req.params.id);
+        // Handle ID from URL param (preferred) or Body (fallback)
+        const propertyId = req.params.id || req.body.propertyId;
 
+        const property = await Property.findById(propertyId);
+        
         if (!property) {
-            return res.status(404).json({ message: 'Property not found' });
+            return res.status(404).json({ message: "Property not found" });
         }
 
-        // 1. Check if the user is the Owner
-        if (property.owner.toString() !== req.user.id) {
-            return res.status(401).json({ message: 'Not authorized to vacate this property' });
+        // Check ownership
+        if (property.owner.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ message: "Not authorized" });
         }
 
-        // 2. Find the ACTIVE Booking for this property
-        // We look for a booking that is currently 'Booked'
-        // This requires the Booking model imported at the top
-        const activeBooking = await Booking.findOne({ 
-            property: req.params.id, 
-            status: 'Booked' 
-        });
+        // 1. Reset Property Status
+        property.status = 'Available';
+        await property.save();
 
-        // 3. Close the Booking (Mark as Vacated)
+        // 2. Update Booking Status (Requires Booking Model!)
+        const activeBooking = await Booking.findOne({ property: propertyId, status: 'Booked' });
         if (activeBooking) {
-            activeBooking.status = 'Vacated'; // This moves it to "History"
+            activeBooking.status = 'Vacated';
+            activeBooking.moveOutDate = Date.now();
             await activeBooking.save();
         }
 
-        // 4. Reset the Property
-        property.status = 'Available'; 
-        property.tenant = null;        
-        
-        await property.save();
-
-        res.status(200).json({ message: 'Property vacated and booking closed', property });
+        res.status(200).json({ message: "Property Vacated." });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error: Could not vacate property' });
+        console.error("❌ VACATE ERROR:", error);
+        res.status(500).json({ message: error.message });
     }
 };
 

@@ -59,7 +59,7 @@ const createBooking = async (req, res) => {
                         <p><strong>Time:</strong> ${visitTime}</p>
                         <p><strong>Message:</strong> "${message}"</p>
                     </div>
-                    <a href="https://arivohomes.onrender.com/dashboard">Go to Dashboard</a>
+                    <a href="https://arivohomes.com/dashboard">Go to Dashboard</a>
                 `
             });
         } catch (emailError) {
@@ -138,7 +138,8 @@ const updateBookingStatus = async (req, res) => {
             sendEmail({
                 email: tenant.email,
                 subject: `✅ Visit Confirmed: ${propertyTitle}`,
-                html: `<h3>Good News!</h3><p>The owner accepted your visit for <strong>${propertyTitle}</strong>.</p>`
+                html: `<h3>Good News!</h3><p>The owner accepted your visit for <strong>${propertyTitle}</strong>.</p>
+                <a href="https://arivohomes.com/dashboard">Go to Dashboard</a>`
             }).catch(e => console.log("Email fail:", e.message));
 
             return res.status(200).json({ message: "Visit Scheduled Successfully!" });
@@ -173,7 +174,8 @@ const updateBookingStatus = async (req, res) => {
             sendEmail({
                 email: tenant.email,
                 subject: `🎉 New Home: ${propertyTitle}`,
-                html: `<h3>You got the home! 🏠</h3><p>You are the finalized tenant for <strong>${propertyTitle}</strong>.</p>`
+                html: `<h3>You got the home! 🏠</h3><p>You are the finalized tenant for <strong>${propertyTitle}</strong>.</p>
+                <a href="https://arivohomes.com/dashboard">Go to Dashboard</a>`
             }).catch(e => console.log("Email fail:", e.message));
 
             return res.status(200).json({ message: "Tenant Finalized!" });

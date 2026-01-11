@@ -8,12 +8,30 @@ const Navbar = () => {
     const location = useLocation();
     const [user, setUser] = useState(null);
 
+    // --- FIX STARTS HERE ---
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, [location]);
+        const checkUser = () => {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                setUser(JSON.parse(storedUser));
+            } else {
+                // CRITICAL FIX: If no user found, explicitly clear the state
+                setUser(null);
+            }
+        };
+
+        // Run check immediately
+        checkUser();
+
+        // Optional: Listen for a custom event if you want truly instant updates 
+        // without route changes (useful for modals)
+        window.addEventListener('storage', checkUser);
+        
+        return () => {
+            window.removeEventListener('storage', checkUser);
+        };
+    }, [location]); // Re-runs whenever URL changes (e.g. redirect after logout)
+    // --- FIX ENDS HERE ---
 
     const handleListProperty = () => {
         if (user) {
@@ -198,10 +216,10 @@ const Navbar = () => {
 
                 {/* DASHBOARD TAB (Only if NOT in center slot) */}
                 {(!user || user.role === 'owner') && user && (
-                     <Link to="/dashboard" className={`bottom-tab ${isActive('/dashboard') ? 'active' : ''}`}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                        <span>Dash</span>
-                    </Link>
+                      <Link to="/dashboard" className={`bottom-tab ${isActive('/dashboard') ? 'active' : ''}`}>
+                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                         <span>Dash</span>
+                     </Link>
                 )}
                 
                 {/* GUEST LOGIN TAB */}

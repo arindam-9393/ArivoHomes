@@ -1,20 +1,26 @@
 import { useState, useEffect } from 'react';
 import API from '../axiosConfig';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // 1. Import useLocation
 import SearchBar from '../components/SearchBar';
 
 const Home = () => {
     const navigate = useNavigate();
+    const location = useLocation(); // 2. Initialize location hook
     const [allLocations, setAllLocations] = useState([]);
     
-    // 1. STATE TO TRACK LOGIN STATUS
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
-        // 2. CHECK LOCAL STORAGE ON LOAD
-        const token = localStorage.getItem('token');
-        setIsLoggedIn(!!token); // If token exists, this becomes true
+        // 3. Define the check function
+        const checkAuthStatus = () => {
+            const token = localStorage.getItem('token');
+            setIsLoggedIn(!!token); // !! converts string to boolean (true) or null to false
+        };
 
+        // Run immediately
+        checkAuthStatus();
+
+        // 4. Fetch locations (keep this independent if you want, or inside)
         const fetchLocations = async () => {
             try {
                 const res = await API.get('/property');
@@ -26,7 +32,16 @@ const Home = () => {
             }
         };
         fetchLocations();
-    }, []);
+
+        // 5. Add event listener for cross-tab updates (optional but good)
+        window.addEventListener('storage', checkAuthStatus);
+
+        return () => {
+            window.removeEventListener('storage', checkAuthStatus);
+        };
+
+    }, [location]); // 6. CRITICAL FIX: Add 'location' here. 
+                    // This forces the check to run every time you navigate to this page.
 
     const handleSearch = (filters) => {
         const params = new URLSearchParams(filters).toString();

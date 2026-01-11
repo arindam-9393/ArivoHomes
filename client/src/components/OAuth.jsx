@@ -1,10 +1,64 @@
+// import { GoogleAuthProvider, getAuth, signInWithPopup } from 'firebase/auth';
+// import { app } from '../firebase';
+// import API from '../../src/axiosConfig';
+// import { useNavigate } from 'react-router-dom';
+
+// // 1. ACCEPT 'role' PROP HERE
+// const OAuth = ({ role }) => { 
+//     const navigate = useNavigate();
+
+//     const handleGoogleClick = async () => {
+//         try {
+//             const provider = new GoogleAuthProvider();
+//             const auth = getAuth(app);
+//             const result = await signInWithPopup(auth, provider);
+            
+//             // 2. SEND ROLE TO BACKEND
+//             const res = await API.post('/user/google', {
+//                 name: result.user.displayName,
+//                 email: result.user.email,
+//                 photo: result.user.photoURL,
+//                 role: role || 'tenant' // Send the selected role!
+//             });
+
+//             localStorage.setItem('user', JSON.stringify(res.data));
+//             navigate('/dashboard');
+
+//         } catch (error) {
+//             console.error("Could not sign in with Google", error);
+//         }
+//     };
+
+//     return (
+//         <button 
+//             type="button" 
+//             onClick={handleGoogleClick}
+//             style={{ 
+//                 backgroundColor: '#db4437', 
+//                 color: 'white', 
+//                 padding: '12px', 
+//                 borderRadius: '8px', 
+//                 border: 'none', 
+//                 width: '100%', 
+//                 fontWeight: 'bold', 
+//                 cursor: 'pointer',
+//                 marginBottom: '15px',
+//                 marginTop: '10px'
+//             }}
+//         >
+//             CONTINUE WITH GOOGLE
+//         </button>
+//     );
+// }
+
+// export default OAuth;
 import { GoogleAuthProvider, getAuth, signInWithPopup } from 'firebase/auth';
 import { app } from '../firebase';
 import API from '../../src/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 
-// 1. ACCEPT 'role' PROP HERE
-const OAuth = ({ role }) => { 
+// 1. ACCEPT 'phone' PROP HERE ALONG WITH 'role'
+const OAuth = ({ role, phone }) => { 
     const navigate = useNavigate();
 
     const handleGoogleClick = async () => {
@@ -13,15 +67,22 @@ const OAuth = ({ role }) => {
             const auth = getAuth(app);
             const result = await signInWithPopup(auth, provider);
             
-            // 2. SEND ROLE TO BACKEND
+            // 2. SEND PHONE TO BACKEND
             const res = await API.post('/user/google', {
                 name: result.user.displayName,
                 email: result.user.email,
                 photo: result.user.photoURL,
-                role: role || 'tenant' // Send the selected role!
+                role: role || 'tenant', // Send the selected role
+                phone: phone // Send the phone number from Step 1
             });
 
+            // 3. SAVE TOKEN AND USER
+            // It is important to save 'token' separately so your axiosConfig can find it later
+            if (res.data.token) {
+                localStorage.setItem('token', res.data.token);
+            }
             localStorage.setItem('user', JSON.stringify(res.data));
+            
             navigate('/dashboard');
 
         } catch (error) {

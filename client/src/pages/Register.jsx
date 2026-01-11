@@ -236,7 +236,6 @@
 // export default Register;
 
 
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import API from '../axiosConfig';
@@ -272,13 +271,21 @@ const Register = () => {
         setStep(2);
     };
 
-    // Step 2: Role -> Step 3
-    const handleRoleSelect = (selectedRole) => {
+    // Step 2: Role Selection (Just updates state, does not change page)
+    const selectRole = (selectedRole) => {
         setFormData({ ...formData, role: selectedRole });
+    };
+
+    // Step 2: Continue Button (Moves to Step 3)
+    const handleRoleContinue = () => {
+        if (!formData.role) {
+            alert("Please select a role (Tenant or Owner) to continue.");
+            return;
+        }
         setStep(3);
     };
 
-    // Step 3: Register -> Verify OTP
+    // Step 3: Register -> Dashboard
     const onSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -286,17 +293,23 @@ const Register = () => {
         try {
             const res = await API.post('/user/register', formData);
             
-            // --- FIXED LOGIC HERE ---
             if(res.data.success || res.status === 201) {
-                alert("OTP sent to your email! Please verify.");
-                
-                // DO NOT save to localStorage yet. 
-                // Navigate to Verify OTP page and pass the email so the next page knows who to verify.
-                navigate('/verify-otp', { state: { email: formData.email } }); 
+                // 1. Save Token & User so they are "Logged In"
+                if (res.data.token) {
+                    localStorage.setItem('token', res.data.token);
+                }
+                localStorage.setItem('user', JSON.stringify(res.data.user || res.data));
+
+                // 2. Alert & Navigate
+                alert("Registration Successful! OTP sent to email.");
+                // If you want to force OTP verification first, navigate to /verify-otp
+                // If you want them in the dashboard immediately (as requested), go to /dashboard
+                navigate('/dashboard'); 
             } else {
                 alert(res.data.message);
             }
         } catch (error) {
+            console.error(error);
             alert(error.response?.data?.message || 'Registration failed');
         } finally {
             setLoading(false);
@@ -324,7 +337,7 @@ const Register = () => {
                 .subtitle { text-align: center; color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.8rem; }
                 
                 /* Role Styles */
-                .big-role-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 2rem; }
+                .big-role-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 1.5rem; }
                 .big-role-option {
                     display: flex; align-items: center; gap: 15px;
                     padding: 20px; border-radius: 16px; 
@@ -333,6 +346,14 @@ const Register = () => {
                     cursor: pointer; transition: all 0.2s ease;
                 }
                 .big-role-option:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+                
+                /* SELECTED STATE STYLE */
+                .big-role-option.selected {
+                    border-color: #38bdf8;
+                    background: rgba(56, 189, 248, 0.15);
+                    box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+                }
+
                 .big-role-icon { font-size: 2rem; }
                 .big-role-text h3 { margin: 0; color: white; font-size: 1.1rem; }
                 .big-role-text p { margin: 2px 0 0; color: #94a3b8; font-size: 0.85rem; }
@@ -353,6 +374,8 @@ const Register = () => {
                     transition: all 0.35s ease; box-shadow: 0 12px 30px rgba(37, 99, 235, 0.5);
                 }
                 .primary-btn:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 18px 45px rgba(56, 189, 248, 0.7); }
+                .primary-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
                 .back-btn {
                     background: none; border: none; color: #94a3b8; cursor: pointer; 
                     font-size: 0.9rem; margin-bottom: 15px; display: flex; align-items: center; gap: 5px;
@@ -377,7 +400,7 @@ const Register = () => {
             <div className="auth-container">
                 <div className="auth-card">
                     
-                    {/* --- STEP 1: MOBILE NUMBER --- */}
+                    {/* --- STEP 1: MOBILE --- */}
                     {step === 1 && (
                         <form onSubmit={handleMobileSubmit}>
                             <h1>Get Started</h1>
@@ -415,7 +438,11 @@ const Register = () => {
                             <p className="subtitle">How will you use Arivo Homes?</p>
 
                             <div className="big-role-container">
-                                <div className="big-role-option" onClick={() => handleRoleSelect('tenant')}>
+                                {/* Tenant Card */}
+                                <div 
+                                    className={`big-role-option ${formData.role === 'tenant' ? 'selected' : ''}`} 
+                                    onClick={() => selectRole('tenant')}
+                                >
                                     <span className="big-role-icon">🏠</span>
                                     <div className="big-role-text">
                                         <h3>I am a Tenant</h3>
@@ -423,7 +450,11 @@ const Register = () => {
                                     </div>
                                 </div>
 
-                                <div className="big-role-option" onClick={() => handleRoleSelect('owner')}>
+                                {/* Owner Card */}
+                                <div 
+                                    className={`big-role-option ${formData.role === 'owner' ? 'selected' : ''}`} 
+                                    onClick={() => selectRole('owner')}
+                                >
                                     <span className="big-role-icon">🔑</span>
                                     <div className="big-role-text">
                                         <h3>I am an Owner</h3>
@@ -431,6 +462,11 @@ const Register = () => {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Continue Button for Step 2 */}
+                            <button className="primary-btn" onClick={handleRoleContinue}>
+                                Continue &rarr;
+                            </button>
                         </>
                     )}
 
@@ -453,11 +489,13 @@ const Register = () => {
                                 </div>
 
                                 <button className="primary-btn" disabled={loading}>
-                                    {loading ? "Creating Account... ⏳" : "Register & Verify"}
+                                    {loading ? "Creating Account... ⏳" : "Register"}
                                 </button>
 
                                 <div className="divider">OR</div>
-                                <OAuth role={formData.role} />
+                                
+                                {/* Pass Phone and Role to OAuth Component */}
+                                <OAuth role={formData.role} phone={formData.phone} />
                             </form>
                         </>
                     )}

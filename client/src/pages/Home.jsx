@@ -6,8 +6,15 @@ import SearchBar from '../components/SearchBar';
 const Home = () => {
     const navigate = useNavigate();
     const [allLocations, setAllLocations] = useState([]);
+    
+    // 1. STATE TO TRACK LOGIN STATUS
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
+        // 2. CHECK LOCAL STORAGE ON LOAD
+        const token = localStorage.getItem('token');
+        setIsLoggedIn(!!token); // If token exists, this becomes true
+
         const fetchLocations = async () => {
             try {
                 const res = await API.get('/property');
@@ -28,9 +35,9 @@ const Home = () => {
 
     // --- REUSABLE STYLES ---
     const sectionStyle = {
-        padding: '100px 20px', // Consistent vertical spacing
-        maxWidth: '1200px',    // Prevents stretching on big screens
-        margin: '0 auto'       // Centers the content
+        padding: '100px 20px',
+        maxWidth: '1200px',
+        margin: '0 auto'
     };
 
     return (
@@ -46,22 +53,114 @@ const Home = () => {
                 .hover-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
                 .hover-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px -5px rgba(56, 189, 248, 0.3); }
                 
-                /* Gradient Text for Headings */
                 .gradient-text {
                     background: linear-gradient(to right, #fff, #94a3b8);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
                 }
+
+                .glass-btn:hover { background: rgba(255,255,255,0.2) !important; transform: translateY(-2px); }
+                .secondary-btn:hover { background: rgba(56, 189, 248, 0.1) !important; color: #38bdf8 !important; }
+
+                /* --- NAVBAR STYLES --- */
+                .navbar {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    padding: 24px 40px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    z-index: 100;
+                    box-sizing: border-box;
+                }
+
+                .logo {
+                    font-size: 1.5rem;
+                    font-weight: 800;
+                    color: #fff;
+                    letter-spacing: -0.5px;
+                    cursor: pointer;
+                }
+                
+                .nav-links {
+                    display: flex;
+                    align-items: center;
+                    gap: 25px;
+                }
+
+                .nav-item {
+                    color: #cbd5e1;
+                    text-decoration: none;
+                    font-weight: 600;
+                    font-size: 0.95rem;
+                    cursor: pointer;
+                    transition: color 0.3s;
+                }
+                .nav-item:hover { color: #fff; }
+
+                .auth-btn {
+                    padding: 10px 24px;
+                    background: rgba(255,255,255,0.1);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255,255,255,0.2);
+                    border-radius: 50px;
+                    color: white;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+                .auth-btn:hover { background: rgba(255,255,255,0.2); }
+
+                @media (max-width: 768px) {
+                    .navbar { padding: 20px; }
+                    .logo { font-size: 1.3rem; }
+                    h1 { font-size: 2.5rem !important; }
+                    .desktop-only { display: none; } 
+                }
             `}</style>
 
             <div style={{ width: '100%', minHeight: '100vh', color: '#fff', position: 'relative', overflowX: 'hidden' }}>
                 
-                {/* ================= FIXED BACKGROUND (Parallax Effect) ================= */}
+                {/* ================= FIXED BACKGROUND ================= */}
                 <div style={{
                     position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
                     backgroundImage: 'linear-gradient(to bottom, rgba(15,23,42,0.8), rgba(15,23,42,1)), url(https://images.unsplash.com/photo-1493809842364-78817add7ffb)',
                     backgroundSize: 'cover', backgroundPosition: 'center', zIndex: -1
                 }} />
+
+                {/* ================= NAVBAR ================= */}
+                <nav className="navbar">
+                    <div className="logo" onClick={() => navigate('/')}>
+                        Arivo<span style={{ color: '#38bdf8' }}>Homes</span>.
+                    </div>
+
+                    <div className="nav-links">
+                        <span className="nav-item desktop-only" onClick={() => navigate('/properties')}>Browse</span>
+                        
+                        {/* --- LOGIC STARTS HERE --- */}
+                        {isLoggedIn ? (
+                            // IF LOGGED IN: Show Dashboard
+                            <button 
+                                className="auth-btn" 
+                                style={{ background: '#38bdf8', color: '#0f172a', border: 'none' }}
+                                onClick={() => navigate('/dashboard')}
+                            >
+                                Dashboard
+                            </button>
+                        ) : (
+                            // IF NOT LOGGED IN: Show Login & Register
+                            <>
+                                <span className="nav-item" onClick={() => navigate('/login')}>Login</span>
+                                <button className="auth-btn" onClick={() => navigate('/register')}>
+                                    Register
+                                </button>
+                            </>
+                        )}
+                        {/* --- LOGIC ENDS HERE --- */}
+                    </div>
+                </nav>
 
                 {/* ================= HERO SECTION ================= */}
                 <section style={{ 
@@ -71,8 +170,11 @@ const Home = () => {
                     alignItems: 'center', 
                     justifyContent: 'center', 
                     textAlign: 'center',
-                    padding: '0 20px'
+                    padding: '0 20px',
+                    position: 'relative',
+                    paddingTop: '60px'
                 }}>
+                    
                     <div style={{ maxWidth: '900px', width: '100%' }}>
                         <span style={{ color: '#38bdf8', fontWeight: 700, letterSpacing: '3px', fontSize: '0.8rem', textTransform: 'uppercase', display: 'block', marginBottom: '20px' }}>
                             Verified · Broker-Free · Simple
@@ -86,8 +188,15 @@ const Home = () => {
                             Skip the brokerage. Connect directly with owners. Renting made as simple as ordering food.
                         </p>
 
-                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
                             <SearchBar onSearch={handleSearch} availableLocations={allLocations} />
+                            
+                            {/* Hide prompts if logged in to keep it clean */}
+                            {!isLoggedIn && (
+                                <p style={{ fontSize: '0.9rem', color: '#94a3b8', marginTop: '10px' }}>
+                                    Are you a property owner? <span onClick={() => navigate('/register')} style={{ color: '#38bdf8', cursor: 'pointer', textDecoration: 'underline' }}>List for free</span>
+                                </p>
+                            )}
                         </div>
                     </div>
                 </section>
@@ -191,16 +300,35 @@ const Home = () => {
                     <div style={{ maxWidth: '800px', margin: '0 auto', background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(56, 189, 248, 0.02))', padding: '60px 40px', borderRadius: '40px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
                         <h2 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: '20px' }}>Ready to move in?</h2>
                         <p style={{ fontSize: '1.2rem', color: '#94a3b8', marginBottom: '40px' }}>Your dream home is just a click away.</p>
-                        <button 
-                            onClick={() => navigate('/properties')}
-                            style={{
-                                padding: '18px 50px', fontSize: '1.1rem', fontWeight: 700, borderRadius: '100px',
-                                background: '#38bdf8', color: '#0f172a', border: 'none', cursor: 'pointer',
-                                boxShadow: '0 10px 25px -5px rgba(56, 189, 248, 0.5)'
-                            }}
-                        >
-                            Browse All Properties
-                        </button>
+                        
+                        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <button 
+                                onClick={() => navigate('/properties')}
+                                style={{
+                                    padding: '18px 50px', fontSize: '1.1rem', fontWeight: 700, borderRadius: '100px',
+                                    background: '#38bdf8', color: '#0f172a', border: 'none', cursor: 'pointer',
+                                    boxShadow: '0 10px 25px -5px rgba(56, 189, 248, 0.5)'
+                                }}
+                            >
+                                Browse Properties
+                            </button>
+
+                            {/* Only show Register button at bottom if NOT logged in */}
+                            {!isLoggedIn && (
+                                <button 
+                                    className="secondary-btn"
+                                    onClick={() => navigate('/register')}
+                                    style={{
+                                        padding: '18px 50px', fontSize: '1.1rem', fontWeight: 700, borderRadius: '100px',
+                                        background: 'transparent', color: '#fff', border: '1px solid #38bdf8', cursor: 'pointer',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                >
+                                    Register Now
+                                </button>
+                            )}
+                        </div>
+
                     </div>
                 </section>
 

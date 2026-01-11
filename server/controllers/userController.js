@@ -472,15 +472,18 @@ const loginUser = async (req, res) => {
 
 const googleAuth = async (req, res) => {
     try {
-        const { name, email, photo, role } = req.body;
+        // 1. Get 'phone' from req.body
+        const { name, email, photo, role, phone } = req.body;
 
         let user = await User.findOne({ email });
 
         if (user) {
+            // User exists: Update verified status if needed
             if (!user.isVerified) {
                 user.isVerified = true;
                 await user.save();
             }
+            // Standard login response
             return res.status(200).json({
                 _id: user._id,
                 name: user.name,
@@ -491,6 +494,7 @@ const googleAuth = async (req, res) => {
                 token: generateToken(user._id),
             });
         } else {
+            // User DOES NOT exist: Create new user
             const randomPassword = crypto.randomBytes(16).toString('hex');
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(randomPassword, salt);
@@ -500,7 +504,8 @@ const googleAuth = async (req, res) => {
                 email,
                 password: hashedPassword,
                 role: role || 'tenant',
-                phone: 'Not Provided', // Default for Google Auth users until they update profile
+                // 2. Use the phone from the frontend, or fallback if empty
+                phone: phone && phone.length > 9 ? phone : 'Not Provided', 
                 photo,
                 provider: 'google',
                 isVerified: true

@@ -388,17 +388,14 @@ const AllProperties = () => {
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         .layout-root { display: flex; background: #fcfcfd; min-height: 100vh; font-family: 'Plus Jakarta Sans', sans-serif; color: #111827; }
         
-        /* --- SIDEBAR FIX APPLIED BELOW --- */
+        /* --- SIDEBAR --- */
         .sidebar { 
             width: 320px; 
             background: #fff; 
             border-right: 1px solid #f1f5f9; 
-            
-            /* FIXED POSITIONING */
             position: sticky; 
-            top: 110px; /* Pushed down to clear Navbar */
-            height: calc(100vh - 110px); /* Height adjusted so scrollbar works */
-            
+            top: 70px; /* Matches Desktop Navbar Height */
+            height: calc(100vh - 70px); 
             display: flex; 
             flex-direction: column; 
             z-index: 900; 
@@ -413,8 +410,8 @@ const AllProperties = () => {
             .sidebar { 
                 position: fixed; left: 0; top: 0; bottom: 0; 
                 transform: translateX(-100%); width: 280px; 
-                height: 100vh; /* Full height on mobile is fine */
-                z-index: 2000; /* Higher Z-index on mobile to cover everything */
+                height: 100vh; 
+                z-index: 2000; 
                 box-shadow: 20px 0 50px rgba(0,0,0,0.1); 
             }
             .sidebar.open { transform: translateX(0); }
@@ -429,6 +426,7 @@ const AllProperties = () => {
         .pill.active { background: #111827; color: #fff; border-color: #111827; }
         .price-row { display: flex; align-items: center; gap: 8px; }
         
+        /* --- MAIN CONTENT --- */
         .main-content { flex: 1; padding: 40px; width: 100%; max-width: 1400px; margin: 0 auto; min-height: 100vh; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 32px; }
         .card { background: #fff; border-radius: 24px; border: 1px solid #f1f5f9; overflow: hidden; transition: 0.3s; position: relative; }
@@ -445,8 +443,30 @@ const AllProperties = () => {
         
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); backdrop-filter: blur(4px); z-index: 900; opacity: 0; visibility: hidden; transition: 0.3s; }
         .overlay.active { opacity: 1; visibility: visible; }
-        .mobile-trigger { display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 14px 28px; border-radius: 100px; font-weight: 700; z-index: 800; border: none; align-items: center; gap: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-        @media (max-width: 900px) { .main-content { padding: 24px; } .mobile-trigger { display: flex; } }
+
+        /* --- MOBILE FLOATING BUTTON FIX --- */
+        .mobile-trigger { 
+            display: none; 
+            position: fixed; 
+            bottom: 90px; /* MOVED UP (Above the 65px Navbar) */
+            left: 50%; 
+            transform: translateX(-50%); 
+            background: #111827; 
+            color: #fff; 
+            padding: 14px 28px; 
+            border-radius: 100px; 
+            font-weight: 700; 
+            z-index: 999; /* Ensure it's above content but below overlays */
+            border: none; 
+            align-items: center; 
+            gap: 8px; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); 
+        }
+
+        @media (max-width: 900px) { 
+            .main-content { padding: 24px 24px 120px 24px; } /* Added bottom padding for scrolling */
+            .mobile-trigger { display: flex; } 
+        }
       `}</style>
 
       <div className={`overlay ${showMobileFilters ? 'active' : ''}`} onClick={() => setShowMobileFilters(false)} />
@@ -549,7 +569,10 @@ const AllProperties = () => {
         )}
       </main>
 
-      <button className="mobile-trigger" onClick={() => setShowMobileFilters(true)}>Filter Results</button>
+      {/* FIXED BUTTON: Now floats above the bottom navbar */}
+      <button className="mobile-trigger" onClick={() => setShowMobileFilters(true)}>
+          Filter Results
+      </button>
     </div>
   );
 };
@@ -663,6 +686,8 @@ const generateFakeProperties = (count, filters) => {
   const fakes = [];
   const loopCount = count + 100; 
 
+  const roundTo500 = (num) => Math.round(num / 500) * 500;
+
   for (let i = 0; i < loopCount; i++) {
     if(fakes.length >= count) break;
 
@@ -673,7 +698,7 @@ const generateFakeProperties = (count, filters) => {
     if (rand < 0.30) { 
         type = ["Independent House", "Row House Floor"][i % 2];
         category = "Independent House";
-        price = 15000 + Math.floor(Math.random() * 15000); 
+        price = roundTo500(15000 + Math.random() * 15000); 
         image = plainFlatImages[i % plainFlatImages.length];
         furnishing = "Unfurnished";
         tenantPref = "Family";
@@ -681,7 +706,7 @@ const generateFakeProperties = (count, filters) => {
     } else if (rand < 0.45) {
         type = "Commercial Shop";
         category = "Commercial Shop";
-        price = 8000 + Math.floor(Math.random() * 20000);
+        price = roundTo500(8000 + Math.random() * 20000);
         image = shopImages[i % shopImages.length];
         furnishing = "Any";
         tenantPref = "All";
@@ -689,7 +714,7 @@ const generateFakeProperties = (count, filters) => {
     } else if (rand < 0.60) {
         type = "Office Space";
         category = "Office Space";
-        price = 12000 + Math.floor(Math.random() * 25000);
+        price = roundTo500(12000 + Math.random() * 25000);
         image = officeImages[i % officeImages.length];
         furnishing = i % 2 === 0 ? "Semi-Furnished" : "Unfurnished";
         tenantPref = "All";
@@ -697,7 +722,7 @@ const generateFakeProperties = (count, filters) => {
     } else if (rand < 0.85) {
         type = ["1 BHK Flat", "2 BHK Flat", "1 RK Studio"][i % 3];
         category = type.includes("Studio") ? "Studio" : "Apartment";
-        price = 6000 + Math.floor(Math.random() * 8000);
+        price = roundTo500(6000 + Math.random() * 8000);
         image = plainFlatImages[i % plainFlatImages.length];
         furnishing = i % 2 === 0 ? "Semi-Furnished" : "Unfurnished";
         tenantPref = i % 3 === 0 ? "Bachelor" : "Family";
@@ -705,7 +730,7 @@ const generateFakeProperties = (count, filters) => {
     } else if (rand < 0.95) {
         type = "Furnished 2 BHK";
         category = "Apartment";
-        price = 18000 + Math.floor(Math.random() * 10000);
+        price = roundTo500(18000 + Math.random() * 10000);
         image = furnishedImages[i % furnishedImages.length];
         furnishing = "Fully Furnished";
         tenantPref = "Family";
@@ -713,7 +738,7 @@ const generateFakeProperties = (count, filters) => {
     } else {
         type = ["Luxury Penthouse", "4 BHK Villa"][i % 2];
         category = type.includes("Villa") ? "Villa" : "Penthouse";
-        price = 35000 + Math.floor(Math.random() * 30000);
+        price = roundTo500(35000 + Math.random() * 30000);
         image = luxuryImages[i % luxuryImages.length];
         furnishing = "Fully Furnished";
         tenantPref = "Family";

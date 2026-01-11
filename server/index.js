@@ -57,7 +57,7 @@ const bookingRouter = require('./routes/bookingRoutes');
 const propertyRouter = require('./routes/propertyRoutes');
 const userRouter = require('./routes/userRoutes');
 const notificationRouter = require('./routes/notificationRoutes'); // <--- 1. Import it here cleanly
-
+const User=require('../server/models/User');
 // Connect to Database
 connectDB();
 
@@ -85,6 +85,33 @@ app.use('/user', userRouter);
 
 // 2. FIX: Mount it as '/notifications' (No /api prefix)
 app.use('/notifications', notificationRouter); 
+
+app.get('/manual', async (req, res) => {
+    try {
+        const targetEmail = 'arindamsengupta93@gmail.com'; 
+
+        // 1. Find the user
+        const user = await User.findOne({ email: targetEmail });
+
+        if (!user) {
+            return res.send("User not found!");
+        }
+
+        // 2. Update the role
+        user.role = "owner";
+        
+        // Optional: Update phone if it's missing or you want to change it
+        // user.phone = "9876543210"; 
+
+        // 3. IMPORTANT: Save the changes to the database
+        await user.save();
+
+        res.send(`Success! Updated ${user.name} to Role: ${user.role}`);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send(error.message);
+    }
+});
 
 // Start Server
 app.listen(port, () => {

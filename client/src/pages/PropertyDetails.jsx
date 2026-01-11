@@ -320,7 +320,6 @@
 // export default PropertyDetails;
 
 
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import API from '../axiosConfig';
@@ -358,11 +357,105 @@ const PropertyDetails = () => {
 
             // 1. CHECK IF FAKE PROPERTY
             if (id.startsWith('fake-')) {
-                // Define Image Pools (Same as AllProperties for consistency)
-                const shopImages = ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ1p6dLe2ssnNGDA1crq3zKc8bUJgZhiTtC6Q&s','https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2aML13Sf4d1pFmS4_ptxxG0D62BeZKmInUg&s','https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQizJzytLyEdTQ0DJ4A89XADUIxbxHoyBA-KQ&s','https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQV7mu5_K86YQaa7uWbK8um8WRxSWd7YnqGew&s'];
-                const officeImages = ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT7g43Ku9ljEAaidEsItfT0gmfIYhMD455a4g&s','https://img.freepik.com/premium-photo/rooms-empty-office-with-one-with-windows-technical-ceilings-blue-carpeted-floors-individual-offices_449839-6569.jpg','https://business.cornell.edu/wp-content/uploads/sites/2/2023/06/AdobeStock_empty.office.600x400.jpg','https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS8XtUqzrNCJIHYjckZB_hbv4DMB6j3G8TfdQ&s'];
-                const plainFlatImages = ['https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQED6-fhf2_TdY3IClhj9doL4EnGfRTG6uxdA&s','https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnEG-D8-txps3aU7lEq4FA7IekzLjnG9Lx4bVzZ2QXSw&s','https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnSpZeSNN3gcE1zEqy-Mdc1cIS8yyNfT3ppA&s','https://housing-images.n7net.in/01c16c28/9edb849e007d9d6c7dc37a9f86827667/v0/medium/1_bhk_independent_builder_floor-for-rent-malviya_nagar-New+Delhi-bedroom.jpg'];
-                const furnishedImages = ['https://nagpurrental.com/wp-content/uploads/2023/07/3BHK-FLAT-Rent-Dattatray-Nagar-Nagpur.jpeg','https://nagpurrental.com/wp-content/uploads/2022/07/images1.jpg','https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTY6-tOTDmXAR99r7eXgLTYplP9i8A4M8mgVQ&s'];
+                // Define Image Pools
+                const shopImages = [
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ1p6dLe2ssnNGDA1crq3zKc8bUJgZhiTtC6Q&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2aML13Sf4d1pFmS4_ptxxG0D62BeZKmInUg&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQizJzytLyEdTQ0DJ4A89XADUIxbxHoyBA-KQ&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQV7mu5_K86YQaa7uWbK8um8WRxSWd7YnqGew&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcROOhhhz97J0WnXtBXUSzPcc9o3WX6FXpnjtg&s'
+                ];
+                const officeImages = [
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT7g43Ku9ljEAaidEsItfT0gmfIYhMD455a4g&s',
+                    'https://img.freepik.com/premium-photo/rooms-empty-office-with-one-with-windows-technical-ceilings-blue-carpeted-floors-individual-offices_449839-6569.jpg',
+                    'https://business.cornell.edu/wp-content/uploads/sites/2/2023/06/AdobeStock_empty.office.600x400.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS8XtUqzrNCJIHYjckZB_hbv4DMB6j3G8TfdQ&s',
+                    'https://static01.nyt.com/images/2023/09/01/multimedia/01Office-Space-jpwv/01Office-Space-jpwv-mediumSquareAt3X.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJZ8Qx64YUuSW-XC467pWt7k3XC5e_smPriA&s'
+                ];
+                
+                const plainFlatImages = [
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQED6-fhf2_TdY3IClhj9doL4EnGfRTG6uxdA&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnEG-D8-txps3aU7lEq4FA7IekzLjnG9Lx4bVzZ2QXSw&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRnSpZeSNN3gcE1zEqy-Mdc1cIS8yyNfT3ppA&s',
+                    'https://housing-images.n7net.in/01c16c28/9edb849e007d9d6c7dc37a9f86827667/v0/medium/1_bhk_independent_builder_floor-for-rent-malviya_nagar-New+Delhi-bedroom.jpg',
+                    'https://imagecdn.99acres.com/media1/34518/12/690372303M-1766627498408.webp',
+                    'https://imagecdn.99acres.com/media1/33346/14/666934731M-1766703555570.webp',
+                    'https://thumbs.dreamstime.com/b/generic-modern-residential-empty-bedroom-interior-kent-washington-modern-residential-empty-bedroom-interior-420106979.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSM9KrFpENOsiyr7zjzPy89OfkVTyVMKq6hhw&s',
+                    'https://property-img.s3.ap-south-1.amazonaws.com/prop_17662246452.jpeg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlq-Th-rx9vy3mW7iPXTkEJIAb88bbxo117w&s',
+                    'https://is1-2.housingcdn.com/01c16c28/40dbfcd97eb64f549a1a748157f3b064/v0/fs/1_bhk_apartment-for-rent-goregaon_west-Mumbai-bedroom.jpg',
+                    'https://img.staticmb.com/mbphoto/property/cropped_images/2025/Nov/18/Photo_h470_w1080/68821233_3_PropertyImage1763479353710_470_1080.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxVeXc4j1PRitKvXBpb1SO2TzMxe_LNz5eLPuLcnntuQ&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxV8h1aBi_nohno5d0fXXC0o66wOd7RYYCKRrV4y-SrA&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIcK0rtVgCu2-c29D_5tjsj72JLol55pBs-ktWgO5ezQ&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSF0cR4jm6kXFMfWzucMfahqS0g96WFYRJCdSfe8uGspg&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTE5_ttm7wDkS-xBruW7OGkLpiS0CAKtNncMpqn2jXArQ&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWKzVBuqJ1NDI96brNj_Z3yW5bJfoaQzDAgtwO3pcNNw&s',
+                    'https://www.magicbricks.com/3-bhk-independent-house-for-rent-in-janaki-nagar-maduravoyal-chennai-pppfr',
+                    'https://imagecdn.99acres.com/media1/34462/8/689248877M-1766394213414.webp',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTu0y2z_Jaac471WXR8h_rmDpAqCB2dhhAzeQ&s',
+                    'https://housing-images.n7net.in/01c16c28/477c982eb19261b26c75379e7a9b00e4/v0/medium/3_bhk_apartment-for-rent-vidya_nagar_bilaspur-Bilaspur-hall.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTuNlwok1GFGlBPeu_NZFoesmanxmp6gKH9A&s',
+                    'https://images.nobroker.in/images/8a9f9386997a28d801997a615fda1749/8a9f9386997a28d801997a615fda1749_239539_290251_medium.jpg',
+                    'https://images.nobroker.in/images/8a9fa2839a670034019a6753698e2182/8a9fa2839a670034019a6753698e2182_23336_122940_medium.jpg',
+                    'https://i.pinimg.com/736x/cb/6f/18/cb6f18c70e3b3b84b13981f790659500.jpg',
+                    'https://i.pinimg.com/736x/3e/29/8e/3e298eb47ee0d1840f51e411278265fb.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQtdMgcJ3dy0zchQ_N4XsmWWVPizvlGz7mXBQ&s',
+                    'https://images.nobroker.in/images/8a9fa190989415760198947c9a5f27a1/8a9fa190989415760198947c9a5f27a1_96556_474256_medium.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXwU3eXTesNuthyWiemGJzbo2euszHGZDHmNRGNwDOmA&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBOrAkaQ0Z8iOf_utxDU4pdAPiRYKteuHqzC7BWKgzxQ&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRK42kp1MB2KXZvlKdGXhwb7C197rDHLzQJIFO07y1eKw&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ1eIZnfSP8b0_V8Llcm1Mn_UBmeKE4sCVQKSmdOfFRgw&s'
+                ];
+
+                const furnishedImages = [
+                    'https://nagpurrental.com/wp-content/uploads/2023/07/3BHK-FLAT-Rent-Dattatray-Nagar-Nagpur.jpeg',
+                    'https://nagpurrental.com/wp-content/uploads/2022/07/images1.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTY6-tOTDmXAR99r7eXgLTYplP9i8A4M8mgVQ&s',
+                    'https://5.imimg.com/data5/SELLER/Default/2024/10/461228767/PS/TJ/FK/2703532/3-bhk-fully-furnished-flat.jpg',
+                    'https://guesthousewale.com/storage/properties/noida/noida-extension/2bhk/1/2bhk-fully-furnished-flat-in-noida-extension-4.jpg',
+                    'https://cf.bstatic.com/xdata/images/hotel/max1024x768/566202883.jpg?k=9e4a37b06b655ebde4c92fb12399035a85c9d4966e7cca20b6c845865365eb06&o=',
+                    'https://cf.bstatic.com/xdata/images/hotel/max1024x768/519060992.jpg?k=b058066d4e154d7c5558be72168ea0966a85ae5f1c919b67931e9870716ac1e7&o=',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSghrztBlvijoRhquV8VQxks8uJ5w7NmDHnMw&s',
+                    'https://d1hy6t2xeg0mdl.cloudfront.net/image/84467/ffd20221d2/1024-width',
+                    'https://i.pinimg.com/236x/ab/c7/3e/abc73e500e9ea5f3b9acae0260f44440.jpg',
+                    'https://i.pinimg.com/736x/f7/e2/9d/f7e29d37e8fb5eed31aa8e5a8917df58.jpg',
+                    'https://images.oyoroomscdn.com/uploads/hotel_image/210502/small/slsdmlgbyvjg.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTGlKpG5FmS8TlwVvzELJ6jLte_Iml6B8kJ1BKMbK1eVw&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxrirZlQAuvX1jNIoxqC_dZvba9Tr0witDhB8auWUbiw&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR91EgPRHszPiWzeGLzB-50DAoGWDLCjbL2uGKcsnPa4g&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSc77Cz9TesUXU2JAIbLpt9sUOtJCmlAjo2-2tlatDh8w&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvbJkqgVldjTebJyLzfP42fpTO-R9-2hDYM3NYgo4sGQ&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToYmmhrLA5yMRQvH84LEkm0G0Ojq_QE5uOhtgaMqkcHg&s',
+                    'https://images.squarespace-cdn.com/content/v1/56dfd5cc9f7266ed7f04b64d/1585743758868-H4OQJFRUE73J6H4CV142/image-asset.jpeg',
+                    'https://images.squarespace-cdn.com/content/v1/56dfd5cc9f7266ed7f04b64d/1585743751085-N2317B7K3I2YBZHPHENO/image-asset.jpeg',
+                    'https://c8.alamy.com/comp/2RTC433/mauritania-adrar-region-chinguetti-local-kitchen-2RTC433.jpg',
+                    'https://5.imimg.com/data5/DL/SR/MY-12354255/modular-kitchen-designing-services-500x500.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOSlIRhkLPhSRWEghvu7xDMURrR9JzYTgq6tjnxF9DrQ&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdOI1ewjpse-7E-UbfVzsdDedll8qYjhr5LQ&s',
+                    'https://www.winteria.in/wp-content/uploads/2023/06/indian-style-small-modular-kitchen-design.png',
+                    'https://www.shutterstock.com/image-photo/19apr2016-small-house-interior-shoing-260nw-1137395780.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdglPSAmqG27H6s3LOx5imaYXNAYp885GqFw&s',
+                    'https://content.jdmagicbox.com/comp/ahmedabad/39/079p57039/catalogue/indramohansingh-soni-thaltej-ahmedabad-paying-guest-accommodations-47019hb.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSfCN5e0JbGszRVWUapGu_ypYRk4XyBiA7CPm_bnKYeQ&s',
+                    'https://images.homify.com/v1438440089/p/photo/image/324794/simple-small-kitchen-design.jpg',
+                    'https://5.imimg.com/data5/DV/VK/BE/ANDROID-1943402/product-jpeg.jpg',
+                    'https://www.kolkatainterior.in/project/images/Pankaj-Das/Kitchen-South-Wall-Lower-Cabinets.jpg',
+                    'https://thumbs.dreamstime.com/b/small-house-interior-shoing-kitchen-middle-class-kalyan-mumbai-march-maharashtra-india-asia-174566741.jpg',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTE26w1BRRl12nF-METZZsQGuKm__SDPudgzPXlijoeuQ&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYpKfvB1SI5wz45rAHmrKOoWZqd8x7p7_q1s90dQeeyQ&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS6rDxTOgJ2eSFij_ogNwxDLTBBt3C9vuUJVw&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRD2ZEgCHnDWDjotyxICklkupdGgAPh3Ik8lQ&s',
+                    'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcST0XZflK_q_xz3nB6RKysd-jhgma4d5MAyjQ&s'
+                ];
+                
+                const luxuryImages = [
+                    'https://nagpurrental.com/wp-content/uploads/2022/07/images1.jpg',
+                    'https://5.imimg.com/data5/SELLER/Default/2024/10/461228767/PS/TJ/FK/2703532/3-bhk-fully-furnished-flat.jpg',
+                    'https://cf.bstatic.com/xdata/images/hotel/max1024x768/519060992.jpg?k=b058066d4e154d7c5558be72168ea0966a85ae5f1c919b67931e9870716ac1e7&o='
+                ];
 
                 setTimeout(() => {
                     let fakeData = { _id: id, isFake: true, location: "Nagpur", status: "Available", owner: { _id: 'admin', name: 'Verified Agent' } };
@@ -384,6 +477,12 @@ const PropertyDetails = () => {
                             description: "Independent property with terrace access. Spacious rooms, separate meter. Ideal for families looking for privacy.",
                             amenities: ["Parking", "Water Supply", "Garden"], tags: ["Private", "Spacious"] };
                         selectedImages = id.includes('Villa') ? furnishedImages : plainFlatImages;
+                    } else if (id.includes('Penthouse')) {
+                        // NEW LOGIC FOR PENTHOUSE
+                        fakeData = { ...fakeData, title: "Premium Penthouse with Terrace", category: "Penthouse", price: 38000, furnishingStatus: "Fully Furnished", tenantPreference: "Family",
+                           description: "Luxurious penthouse on the top floor with private terrace garden. Panoramic city view. Premium fittings.",
+                           amenities: ["Lift", "Power Backup", "Gym", "Private Terrace"], tags: ["Luxury", "View"] };
+                       selectedImages = luxuryImages;
                     } else {
                         // Default to Flat/Apartment
                          fakeData = { ...fakeData, title: "2 BHK Residential Flat", category: "Apartment", price: 12000, furnishingStatus: "Semi-Furnished", tenantPreference: "Family & Bachelor",

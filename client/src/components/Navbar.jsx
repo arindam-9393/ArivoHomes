@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import NotificationBell from './NotificationBell'; // <--- 1. IMPORT ADDED
-
-// Import the logo
+import NotificationBell from './NotificationBell';
 import logo from '../assets/logo.png'; 
 
 const Navbar = () => {
@@ -64,7 +62,10 @@ const Navbar = () => {
                 .btn-danger:hover { background: #7f1d1d; color: white; }
 
                 .divider { width: 1px; height: 24px; background: #334155; }
-                .hamburger { display: none; font-size: 1.5rem; cursor: pointer; color: #ffffff; z-index: 1002; padding: 5px; }
+                
+                /* MOBILE ELEMENTS */
+                .mobile-right-actions { display: none; align-items: center; gap: 20px; }
+                .hamburger { font-size: 1.5rem; cursor: pointer; color: #ffffff; padding: 5px; }
 
                 .mobile-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 2000; opacity: 0; animation: fadeIn 0.3s forwards; }
                 .side-drawer { position: fixed; top: 0; right: 0; width: 75%; max-width: 300px; height: 100vh; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: -10px 0 30px rgba(0,0,0,0.5); border-left: 1px solid rgba(255,255,255,0.1); z-index: 2001; padding: 80px 24px 24px 24px; display: flex; flex-direction: column; gap: 24px; transform: translateX(100%); animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -76,7 +77,11 @@ const Navbar = () => {
                 .side-drawer .btn-outline, .side-drawer .btn-danger { width: 100%; padding: 14px; text-align: center; margin-top: 10px; }
                 .side-drawer .divider { display: none; }
 
-                @media (max-width: 900px) { .nav-links { display: none; } .hamburger { display: block; } }
+                @media (max-width: 900px) { 
+                    .nav-links { display: none; } 
+                    .mobile-right-actions { display: flex; } /* Show Hamburger + Bell on Mobile */
+                }
+                
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
             `}</style>
@@ -88,16 +93,24 @@ const Navbar = () => {
                         <img src={logo} alt="ArivoHomes Logo" className="logo-image" />
                     </Link>
 
-                    <div className="hamburger" onClick={() => setIsMobileMenuOpen(true)}>
-                        ☰
+                    {/* --- MOBILE RIGHT SIDE (Bell + Hamburger) --- */}
+                    <div className="mobile-right-actions">
+                        {/* Only show Bell if user is logged in */}
+                        {user && <NotificationBell />} 
+                        
+                        <div className="hamburger" onClick={() => setIsMobileMenuOpen(true)}>
+                            ☰
+                        </div>
                     </div>
 
+                    {/* --- DESKTOP LINKS --- */}
                     <div className="nav-links">
                         <NavItems 
                             isActive={isActive} 
                             user={user} 
                             handleListProperty={handleListProperty} 
                             handleLogout={handleLogout} 
+                            isMobile={false} 
                         />
                     </div>
                 </div>
@@ -143,10 +156,12 @@ const NavItems = ({ isActive, user, handleListProperty, handleLogout, isMobile, 
 
             {user ? (
                 <>
-                    {/* --- 2. NOTIFICATION BELL ADDED HERE --- */}
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <NotificationBell />
-                    </div>
+                    {/* Only show bell here if NOT mobile (Desktop view) */}
+                    {!isMobile && (
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <NotificationBell />
+                        </div>
+                    )}
 
                     <Link to="/dashboard" className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`} onClick={closeMenu}>
                         Dashboard

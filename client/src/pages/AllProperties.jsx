@@ -286,7 +286,6 @@
 
 
 
-
 import { useState, useEffect } from 'react';
 import API from '../axiosConfig';
 import { useLocation, Link } from 'react-router-dom';
@@ -306,7 +305,7 @@ const AllProperties = () => {
 
   const amenitiesList = ["Power Backup", "Lift", "Security", "Gym", "Swimming Pool", "Garden", "CCTV", "Club House"];
   const furnishingOptions = ["AC", "TV", "Fridge", "Washing Machine", "Wifi", "Bed", "Geyser", "Sofa"];
-  const categories = ["All", "Apartment", "PG", "Studio", "Independent House", "Villa", "Office Space", "Commercial Shop"];
+  const categories = ["All", "Apartment", "PG", "Studio", "Independent House", "Villa", "Penthouse", "Office Space", "Commercial Shop"];
 
   const getOptimizedUrl = (url) => {
     if (!url) return 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ1p6dLe2ssnNGDA1crq3zKc8bUJgZhiTtC6Q&s';
@@ -325,11 +324,12 @@ const AllProperties = () => {
   }, [location.search]);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     const fetchProperties = async () => {
       setLoading(true);
       setError(null);
       try {
-        // --- 1. PREPARE REAL API FILTERS (Restored Full Logic) ---
         const params = new URLSearchParams();
         if (filters.location) params.append('location', filters.location);
         if (filters.category !== 'All') params.append('category', filters.category);
@@ -344,11 +344,9 @@ const AllProperties = () => {
         const res = await API.get(`/property?${params}`);
         const realProperties = Array.isArray(res.data) ? res.data : [];
 
-        // --- 2. GENERATE FAKE PROPERTIES (With Filter Logic) ---
         const TARGET_COUNT = 150; 
         const slotsNeeded = Math.max(0, TARGET_COUNT - realProperties.length);
         
-        // Pass 'filters' to the generator so fakes respect the search
         const fakeProperties = generateFakeProperties(slotsNeeded, filters);
 
         setProperties([...realProperties, ...fakeProperties]);
@@ -356,7 +354,6 @@ const AllProperties = () => {
       } catch (e) {
         console.error(e);
         setError("Could not load properties.");
-        // Fallback
         setProperties(generateFakeProperties(150, filters));
       } finally {
         setLoading(false);
@@ -390,14 +387,39 @@ const AllProperties = () => {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         .layout-root { display: flex; background: #fcfcfd; min-height: 100vh; font-family: 'Plus Jakarta Sans', sans-serif; color: #111827; }
-        .sidebar { width: 320px; background: #fff; border-right: 1px solid #f1f5f9; height: 100vh; position: sticky; top: 0; display: flex; flex-direction: column; z-index: 1000; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* --- SIDEBAR FIX APPLIED BELOW --- */
+        .sidebar { 
+            width: 320px; 
+            background: #fff; 
+            border-right: 1px solid #f1f5f9; 
+            
+            /* FIXED POSITIONING */
+            position: sticky; 
+            top: 110px; /* Pushed down to clear Navbar */
+            height: calc(100vh - 110px); /* Height adjusted so scrollbar works */
+            
+            display: flex; 
+            flex-direction: column; 
+            z-index: 900; 
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+
         .sidebar-header { padding: 32px 24px 10px; display: flex; justify-content: space-between; align-items: center; }
         .sidebar-content { flex: 1; overflow-y: auto; padding: 24px; scrollbar-width: none; }
         .sidebar-content::-webkit-scrollbar { display: none; }
+
         @media (max-width: 900px) {
-            .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); width: 280px; box-shadow: 20px 0 50px rgba(0,0,0,0.1); }
+            .sidebar { 
+                position: fixed; left: 0; top: 0; bottom: 0; 
+                transform: translateX(-100%); width: 280px; 
+                height: 100vh; /* Full height on mobile is fine */
+                z-index: 2000; /* Higher Z-index on mobile to cover everything */
+                box-shadow: 20px 0 50px rgba(0,0,0,0.1); 
+            }
             .sidebar.open { transform: translateX(0); }
         }
+
         .f-section { margin-bottom: 32px; }
         .f-label { font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px; display: block; }
         .input-p { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1.5px solid #f1f5f9; background: #f8fafc; font-size: 0.9rem; font-weight: 600; transition: 0.2s; }
@@ -406,7 +428,8 @@ const AllProperties = () => {
         .pill { padding: 8px 16px; border-radius: 100px; border: 1px solid #f1f5f9; background: #fff; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: 0.2s; color: #64748b; }
         .pill.active { background: #111827; color: #fff; border-color: #111827; }
         .price-row { display: flex; align-items: center; gap: 8px; }
-        .main-content { flex: 1; padding: 40px; width: 100%; max-width: 1400px; margin: 0 auto; }
+        
+        .main-content { flex: 1; padding: 40px; width: 100%; max-width: 1400px; margin: 0 auto; min-height: 100vh; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 32px; }
         .card { background: #fff; border-radius: 24px; border: 1px solid #f1f5f9; overflow: hidden; transition: 0.3s; position: relative; }
         .card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.06); }
@@ -419,6 +442,7 @@ const AllProperties = () => {
         .card-loc { color: #64748b; font-size: 0.85rem; margin-bottom: 16px; display: flex; align-items: center; gap: 4px; }
         .view-btn { width: 100%; padding: 14px; background: #111827; color: #fff; border-radius: 14px; text-decoration: none; display: block; text-align: center; font-weight: 700; font-size: 0.9rem; transition: 0.2s; cursor: pointer; }
         .view-btn:hover { background: #374151; }
+        
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); backdrop-filter: blur(4px); z-index: 900; opacity: 0; visibility: hidden; transition: 0.3s; }
         .overlay.active { opacity: 1; visibility: visible; }
         .mobile-trigger { display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; padding: 14px 28px; border-radius: 100px; font-weight: 700; z-index: 800; border: none; align-items: center; gap: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
@@ -548,6 +572,8 @@ const generateFakeProperties = (count, filters) => {
         'https://static01.nyt.com/images/2023/09/01/multimedia/01Office-Space-jpwv/01Office-Space-jpwv-mediumSquareAt3X.jpg',
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJZ8Qx64YUuSW-XC467pWt7k3XC5e_smPriA&s'
     ];
+    
+    // --- Unfurnished Rooms, Halls, & Simple Kitchens ---
     const plainFlatImages = [
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQED6-fhf2_TdY3IClhj9doL4EnGfRTG6uxdA&s',
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnEG-D8-txps3aU7lEq4FA7IekzLjnG9Lx4bVzZ2QXSw&s',
@@ -560,8 +586,31 @@ const generateFakeProperties = (count, filters) => {
         'https://property-img.s3.ap-south-1.amazonaws.com/prop_17662246452.jpeg',
         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlq-Th-rx9vy3mW7iPXTkEJIAb88bbxo117w&s',
         'https://is1-2.housingcdn.com/01c16c28/40dbfcd97eb64f549a1a748157f3b064/v0/fs/1_bhk_apartment-for-rent-goregaon_west-Mumbai-bedroom.jpg',
-        'https://img.staticmb.com/mbphoto/property/cropped_images/2025/Nov/18/Photo_h470_w1080/68821233_3_PropertyImage1763479353710_470_1080.jpg'
+        'https://img.staticmb.com/mbphoto/property/cropped_images/2025/Nov/18/Photo_h470_w1080/68821233_3_PropertyImage1763479353710_470_1080.jpg',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxVeXc4j1PRitKvXBpb1SO2TzMxe_LNz5eLPuLcnntuQ&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxV8h1aBi_nohno5d0fXXC0o66wOd7RYYCKRrV4y-SrA&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIcK0rtVgCu2-c29D_5tjsj72JLol55pBs-ktWgO5ezQ&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSF0cR4jm6kXFMfWzucMfahqS0g96WFYRJCdSfe8uGspg&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTE5_ttm7wDkS-xBruW7OGkLpiS0CAKtNncMpqn2jXArQ&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWKzVBuqJ1NDI96brNj_Z3yW5bJfoaQzDAgtwO3pcNNw&s',
+        'https://www.magicbricks.com/3-bhk-independent-house-for-rent-in-janaki-nagar-maduravoyal-chennai-pppfr',
+        'https://imagecdn.99acres.com/media1/34462/8/689248877M-1766394213414.webp',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTu0y2z_Jaac471WXR8h_rmDpAqCB2dhhAzeQ&s',
+        'https://housing-images.n7net.in/01c16c28/477c982eb19261b26c75379e7a9b00e4/v0/medium/3_bhk_apartment-for-rent-vidya_nagar_bilaspur-Bilaspur-hall.jpg',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTuNlwok1GFGlBPeu_NZFoesmanxmp6gKH9A&s',
+        'https://images.nobroker.in/images/8a9f9386997a28d801997a615fda1749/8a9f9386997a28d801997a615fda1749_239539_290251_medium.jpg',
+        'https://images.nobroker.in/images/8a9fa2839a670034019a6753698e2182/8a9fa2839a670034019a6753698e2182_23336_122940_medium.jpg',
+        'https://i.pinimg.com/736x/cb/6f/18/cb6f18c70e3b3b84b13981f790659500.jpg',
+        'https://i.pinimg.com/736x/3e/29/8e/3e298eb47ee0d1840f51e411278265fb.jpg',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQtdMgcJ3dy0zchQ_N4XsmWWVPizvlGz7mXBQ&s',
+        'https://images.nobroker.in/images/8a9fa190989415760198947c9a5f27a1/8a9fa190989415760198947c9a5f27a1_96556_474256_medium.jpg',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSXwU3eXTesNuthyWiemGJzbo2euszHGZDHmNRGNwDOmA&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBOrAkaQ0Z8iOf_utxDU4pdAPiRYKteuHqzC7BWKgzxQ&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRK42kp1MB2KXZvlKdGXhwb7C197rDHLzQJIFO07y1eKw&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ1eIZnfSP8b0_V8Llcm1Mn_UBmeKE4sCVQKSmdOfFRgw&s'
     ];
+
+    // --- Furnished Bedrooms, Kitchens, & Halls ---
     const furnishedImages = [
         'https://nagpurrental.com/wp-content/uploads/2023/07/3BHK-FLAT-Rent-Dattatray-Nagar-Nagpur.jpeg',
         'https://nagpurrental.com/wp-content/uploads/2022/07/images1.jpg',
@@ -570,8 +619,39 @@ const generateFakeProperties = (count, filters) => {
         'https://guesthousewale.com/storage/properties/noida/noida-extension/2bhk/1/2bhk-fully-furnished-flat-in-noida-extension-4.jpg',
         'https://cf.bstatic.com/xdata/images/hotel/max1024x768/566202883.jpg?k=9e4a37b06b655ebde4c92fb12399035a85c9d4966e7cca20b6c845865365eb06&o=',
         'https://cf.bstatic.com/xdata/images/hotel/max1024x768/519060992.jpg?k=b058066d4e154d7c5558be72168ea0966a85ae5f1c919b67931e9870716ac1e7&o=',
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSghrztBlvijoRhquV8VQxks8uJ5w7NmDHnMw&s'
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSghrztBlvijoRhquV8VQxks8uJ5w7NmDHnMw&s',
+        'https://d1hy6t2xeg0mdl.cloudfront.net/image/84467/ffd20221d2/1024-width',
+        'https://i.pinimg.com/236x/ab/c7/3e/abc73e500e9ea5f3b9acae0260f44440.jpg',
+        'https://i.pinimg.com/736x/f7/e2/9d/f7e29d37e8fb5eed31aa8e5a8917df58.jpg',
+        'https://images.oyoroomscdn.com/uploads/hotel_image/210502/small/slsdmlgbyvjg.jpg',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTGlKpG5FmS8TlwVvzELJ6jLte_Iml6B8kJ1BKMbK1eVw&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxrirZlQAuvX1jNIoxqC_dZvba9Tr0witDhB8auWUbiw&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR91EgPRHszPiWzeGLzB-50DAoGWDLCjbL2uGKcsnPa4g&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSc77Cz9TesUXU2JAIbLpt9sUOtJCmlAjo2-2tlatDh8w&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvbJkqgVldjTebJyLzfP42fpTO-R9-2hDYM3NYgo4sGQ&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToYmmhrLA5yMRQvH84LEkm0G0Ojq_QE5uOhtgaMqkcHg&s',
+        'https://images.squarespace-cdn.com/content/v1/56dfd5cc9f7266ed7f04b64d/1585743758868-H4OQJFRUE73J6H4CV142/image-asset.jpeg',
+        'https://images.squarespace-cdn.com/content/v1/56dfd5cc9f7266ed7f04b64d/1585743751085-N2317B7K3I2YBZHPHENO/image-asset.jpeg',
+        'https://c8.alamy.com/comp/2RTC433/mauritania-adrar-region-chinguetti-local-kitchen-2RTC433.jpg',
+        'https://5.imimg.com/data5/DL/SR/MY-12354255/modular-kitchen-designing-services-500x500.jpg',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTOSlIRhkLPhSRWEghvu7xDMURrR9JzYTgq6tjnxF9DrQ&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdOI1ewjpse-7E-UbfVzsdDedll8qYjhr5LQ&s',
+        'https://www.winteria.in/wp-content/uploads/2023/06/indian-style-small-modular-kitchen-design.png',
+        'https://www.shutterstock.com/image-photo/19apr2016-small-house-interior-shoing-260nw-1137395780.jpg',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRdglPSAmqG27H6s3LOx5imaYXNAYp885GqFw&s',
+        'https://content.jdmagicbox.com/comp/ahmedabad/39/079p57039/catalogue/indramohansingh-soni-thaltej-ahmedabad-paying-guest-accommodations-47019hb.jpg',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTSfCN5e0JbGszRVWUapGu_ypYRk4XyBiA7CPm_bnKYeQ&s',
+        'https://images.homify.com/v1438440089/p/photo/image/324794/simple-small-kitchen-design.jpg',
+        'https://5.imimg.com/data5/DV/VK/BE/ANDROID-1943402/product-jpeg.jpg',
+        'https://www.kolkatainterior.in/project/images/Pankaj-Das/Kitchen-South-Wall-Lower-Cabinets.jpg',
+        'https://thumbs.dreamstime.com/b/small-house-interior-shoing-kitchen-middle-class-kalyan-mumbai-march-maharashtra-india-asia-174566741.jpg',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTE26w1BRRl12nF-METZZsQGuKm__SDPudgzPXlijoeuQ&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYpKfvB1SI5wz45rAHmrKOoWZqd8x7p7_q1s90dQeeyQ&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS6rDxTOgJ2eSFij_ogNwxDLTBBt3C9vuUJVw&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRD2ZEgCHnDWDjotyxICklkupdGgAPh3Ik8lQ&s',
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcST0XZflK_q_xz3nB6RKysd-jhgma4d5MAyjQ&s'
     ];
+    
     const luxuryImages = [
         'https://nagpurrental.com/wp-content/uploads/2022/07/images1.jpg',
         'https://5.imimg.com/data5/SELLER/Default/2024/10/461228767/PS/TJ/FK/2703532/3-bhk-fully-furnished-flat.jpg',
@@ -581,17 +661,14 @@ const generateFakeProperties = (count, filters) => {
   const locations = ["Sitabuldi", "Sadar", "Dharampeth", "Itwari", "Manewada", "Wardha Road", "Besa", "Narendra Nagar", "Civil Lines", "Mahal"];
   
   const fakes = [];
-  // Generate slightly more than requested to handle filter drops
   const loopCount = count + 100; 
 
   for (let i = 0; i < loopCount; i++) {
-    // If we have enough, stop
     if(fakes.length >= count) break;
 
     const loc = locations[i % locations.length];
     let type, category, price, image, furnishing, tenantPref, parking;
 
-    // Distribute Categories
     const rand = Math.random();
     if (rand < 0.30) { 
         type = ["Independent House", "Row House Floor"][i % 2];
@@ -635,7 +712,7 @@ const generateFakeProperties = (count, filters) => {
         parking = "Covered";
     } else {
         type = ["Luxury Penthouse", "4 BHK Villa"][i % 2];
-        category = type.includes("Villa") ? "Villa" : "Apartment";
+        category = type.includes("Villa") ? "Villa" : "Penthouse";
         price = 35000 + Math.floor(Math.random() * 30000);
         image = luxuryImages[i % luxuryImages.length];
         furnishing = "Fully Furnished";
@@ -643,14 +720,12 @@ const generateFakeProperties = (count, filters) => {
         parking = "Covered";
     }
 
-    // --- APPLY FILTERS TO FAKES ---
     if (filters.location && !loc.toLowerCase().includes(filters.location.toLowerCase())) continue;
     if (filters.category !== 'All' && filters.category !== category) continue;
     if (filters.minPrice && price < parseInt(filters.minPrice)) continue;
     if (filters.maxPrice && price > parseInt(filters.maxPrice)) continue;
     if (filters.tenantPreference !== 'All' && tenantPref !== 'All' && filters.tenantPreference !== tenantPref) continue;
     if (filters.furnishingStatus !== 'Any' && filters.furnishingStatus !== furnishing) continue;
-    // ------------------------------
 
     fakes.push({
       _id: `fake-${i + 1}-${category.replace(/\s/g, '')}`,

@@ -244,10 +244,10 @@ import OAuth from '../components/OAuth';
 
 const Register = () => {
     // --- STATE ---
-    const [step, setStep] = useState(1); // Now we have 3 Steps
+    const [step, setStep] = useState(1);
     
     const [formData, setFormData] = useState({
-        phone: '', // Added Phone
+        phone: '', 
         role: '', 
         name: '',
         email: '',
@@ -262,7 +262,7 @@ const Register = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // Step 1 -> Step 2 (Mobile -> Role)
+    // Step 1: Mobile -> Step 2
     const handleMobileSubmit = (e) => {
         e.preventDefault();
         if (formData.phone.length < 10) {
@@ -272,13 +272,13 @@ const Register = () => {
         setStep(2);
     };
 
-    // Step 2 -> Step 3 (Role -> Details)
+    // Step 2: Role -> Step 3
     const handleRoleSelect = (selectedRole) => {
         setFormData({ ...formData, role: selectedRole });
-        setStep(3); // Automatically go to next step after clicking role
+        setStep(3);
     };
 
-    // Step 3 -> Submit (Details -> Backend)
+    // Step 3: Register -> Verify OTP
     const onSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -286,15 +286,13 @@ const Register = () => {
         try {
             const res = await API.post('/user/register', formData);
             
-            if(res.data.success) {
-                alert("Registration Successful! Welcome to Arivo Homes.");
+            // --- FIXED LOGIC HERE ---
+            if(res.data.success || res.status === 201) {
+                alert("OTP sent to your email! Please verify.");
                 
-                // IMPORTANT: Save user data/token so Dashboard knows they are logged in
-                localStorage.setItem('user', JSON.stringify(res.data)); 
-                localStorage.setItem('token', res.data.token); // If your backend sends token separately
-                
-                // Navigate directly to dashboard
-                navigate('/dashboard'); 
+                // DO NOT save to localStorage yet. 
+                // Navigate to Verify OTP page and pass the email so the next page knows who to verify.
+                navigate('/verify-otp', { state: { email: formData.email } }); 
             } else {
                 alert(res.data.message);
             }
@@ -392,7 +390,6 @@ const Register = () => {
                                     placeholder="Mobile Number (e.g. 9876543210)" 
                                     value={formData.phone}
                                     onChange={(e) => {
-                                        // Only allow numbers
                                         const re = /^[0-9\b]+$/;
                                         if (e.target.value === '' || re.test(e.target.value)) {
                                             onChange(e)
@@ -456,7 +453,7 @@ const Register = () => {
                                 </div>
 
                                 <button className="primary-btn" disabled={loading}>
-                                    {loading ? "Creating Account... ⏳" : "Complete Registration"}
+                                    {loading ? "Creating Account... ⏳" : "Register & Verify"}
                                 </button>
 
                                 <div className="divider">OR</div>

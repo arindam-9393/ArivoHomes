@@ -1,3 +1,332 @@
+// const jwt = require('jsonwebtoken');
+// const bcrypt = require('bcryptjs');
+// const User = require('../models/User');
+// const Booking = require('../models/Booking');
+// const sendEmail = require('../utils/sendEmail');
+// const crypto = require('crypto');
+// const cloudinary = require('cloudinary').v2;
+
+// // --- Helper: Generate JWT ---
+// const generateToken = (id) => {
+//     return jwt.sign({ id }, process.env.JWT_SECRET, {
+//         expiresIn: '30d',
+//     });
+// };
+
+// // ==========================================
+// // GOOGLE AUTH CONTROLLER (PASSPORT-FREE)
+// // ==========================================
+// const googleAuth = async (req, res) => {
+//     try {
+//         const { name, email, photo, role } = req.body;
+
+//         // 1. Check if user already exists
+//         let user = await User.findOne({ email });
+
+//         if (user) {
+//             // If they exist but weren't verified, verify them now
+//             if (!user.isVerified) {
+//                 user.isVerified = true;
+//                 await user.save();
+//             }
+            
+//             // Log them in and send token
+//             return res.status(200).json({
+//                 _id: user._id,
+//                 name: user.name,
+//                 email: user.email,
+//                 role: user.role,
+//                 photo: user.photo,
+//                 token: generateToken(user._id),
+//             });
+//         } else {
+//             // 2. Create new user if they don't exist
+//             // Generate a random password since Google handles auth
+//             const randomPassword = crypto.randomBytes(16).toString('hex');
+//             const salt = await bcrypt.genSalt(10);
+//             const hashedPassword = await bcrypt.hash(randomPassword, salt);
+
+//             user = await User.create({
+//                 name,
+//                 email,
+//                 password: hashedPassword,
+//                 role: role || 'tenant',
+//                 photo,
+//                 provider: 'google',
+//                 isVerified: true
+//             });
+
+//             return res.status(201).json({
+//                 _id: user._id,
+//                 name: user.name,
+//                 email: user.email,
+//                 role: user.role,
+//                 photo: user.photo,
+//                 token: generateToken(user._id),
+//             });
+//         }
+//     } catch (error) {
+//         console.error("Google Auth Error:", error);
+//         res.status(400).json({ message: "Google authentication failed" });
+//     }
+// };
+
+// // ==========================================
+// // REGISTRATION & OTP
+// // ==========================================
+// // ==========================================
+// // REGISTRATION & OTP
+// // ==========================================
+// const registerUser = async (req, res) => {
+//     try {
+//         const { name, email, password, phone, role } = req.body;
+
+//         if (!name || !email || !password) {
+//             return res.status(400).json({ message: "Please fill in all fields" });
+//         }
+
+//         const userExists = await User.findOne({ email });
+//         if (userExists) {
+//             return res.status(400).json({ message: "User already exists" });
+//         }
+
+//         const salt = await bcrypt.genSalt(10);
+//         const hashedPassword = await bcrypt.hash(password, salt);
+//         const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+//         const user = await User.create({
+//             name,
+//             email,
+//             password: hashedPassword,
+//             phone: phone || '',
+//             role: role || 'tenant',
+//             otp: otp,
+//             otpExpire: Date.now() + 10 * 60 * 1000
+//         });
+
+//         if (user) {
+//             const message = `
+//                 <h1>Verify Your Account</h1>
+//                 <p>Your verification code is:</p>
+//                 <h2 style="color: #2563eb;">${otp}</h2>
+//                 <p>This code expires in 10 minutes.</p>
+//             `;
+//             try {
+//                 await sendEmail({
+//                     email: user.email,
+//                     subject: 'ArivoHomes - Verification Code',
+//                     html: message
+//                 });
+//                 res.status(201).json({ message: "OTP sent to your email!", email: user.email });
+//             } catch (error) {
+//                 // 🚨 CRITICAL DEBUGGING LINE
+//                 console.error("❌ EMAIL ERROR:", error); 
+
+//                 await User.findByIdAndDelete(user._id);
+//                 return res.status(500).json({ 
+//                     message: "Email could not be sent. Registration failed.",
+//                     error: error.message // Helps you see the reason in the Browser Network Tab
+//                 });
+//             }
+//         }
+//     } catch (error) {
+//         res.status(500).json({ message: error.message });
+//     }
+// };
+
+// const verifyOTP = async (req, res) => {
+//     const { email, otp } = req.body;
+//     try {
+//         const user = await User.findOne({ email });
+//         if (!user) return res.status(404).json({ message: "User not found" });
+//         if (user.isVerified) return res.status(400).json({ message: "User already verified" });
+
+//         if (user.otp === otp && user.otpExpire > Date.now()) {
+//             user.isVerified = true;
+//             user.otp = undefined;
+//             user.otpExpire = undefined;
+//             await user.save();
+//             res.status(200).json({ message: "Email Verified Successfully! You can now login." });
+//         } else {
+//             return res.status(400).json({ message: "Invalid or Expired OTP" });
+//         }
+//     } catch (error) {
+//         res.status(500).json({ message: error.message });
+//     }
+// };
+
+// // ==========================================
+// // LOGIN
+// // ==========================================
+// const loginUser = async (req, res) => {
+//     try {
+//         const { email, password } = req.body;
+//         const user = await User.findOne({ email });
+//         if (!user) return res.status(400).json({ message: "Invalid credentials" });
+
+//         if (user.provider === 'google') {
+//             return res.status(400).json({ message: "You registered using Google. Please click 'Continue with Google' to login." });
+//         }
+
+//         if (await bcrypt.compare(password, user.password)) {
+//             if (!user.isVerified) {
+//                 return res.status(401).json({ message: "Account not verified. Please verify your email first." });
+//             }
+//             res.json({
+//                 _id: user.id,
+//                 name: user.name,
+//                 email: user.email,
+//                 role: user.role,
+//                 token: generateToken(user._id)
+//             });
+//         } else {
+//             res.status(400).json({ message: "Invalid credentials" });
+//         }
+//     } catch (error) {
+//         res.status(500).json({ message: error.message });
+//     }
+// }
+
+// // ==========================================
+// // PROFILE & DATA
+// // ==========================================
+// const getMe = async (req, res) => {
+//     res.status(200).json(req.user);
+// }
+
+// const getUserProfile = async (req, res) => {
+//     try {
+//         const userId = req.params.id;
+//         const user = await User.findById(userId).select('name email phone role createdAt');
+//         if (!user) return res.status(404).json({ message: 'User not found' });
+
+//         let history = [];
+//         if (user.role === 'tenant') {
+//             try {
+//                 history = await Booking.find({ user: userId, status: { $in: ['Booked', 'Moved Out'] } })
+//                     .populate({ path: 'property', select: 'title location', populate: { path: 'owner', select: 'name email' } })
+//                     .sort({ moveInDate: -1 });
+//             } catch (err) { }
+//         }
+//         res.status(200).json({ user, history });
+//     } catch (error) {
+//         res.status(500).json({ message: error.message });
+//     }
+// };
+
+// const getUploadSignature = (req, res) => {
+//     const timestamp = Math.round((new Date).getTime() / 1000);
+//     const signature = cloudinary.utils.api_sign_request({
+//         timestamp: timestamp,
+//         folder: 'user_profiles',
+//     }, process.env.CLOUDINARY_API_SECRET);
+//     res.json({ timestamp, signature });
+// };
+
+// const updateUserProfile = async (req, res) => {
+//     try {
+//         const user = await User.findById(req.user.id);
+//         if (user) {
+//             user.name = req.body.name || user.name;
+//             user.phone = req.body.phone || user.phone;
+//             user.photo = req.body.photo || user.photo;
+//             const updatedUser = await user.save();
+//             res.json({
+//                 _id: updatedUser._id,
+//                 name: updatedUser.name,
+//                 email: updatedUser.email,
+//                 role: updatedUser.role,
+//                 phone: updatedUser.phone,
+//                 photo: updatedUser.photo,
+//                 token: generateToken(updatedUser._id),
+//             });
+//         } else {
+//             res.status(404).json({ message: 'User not found' });
+//         }
+//     } catch (error) {
+//         res.status(500).json({ message: error.message });
+//     }
+// };
+
+// // ==========================================
+// // PASSWORD RESET
+// // ==========================================
+// const forgotPassword = async (req, res) => {
+//     const { email } = req.body;
+//     try {
+//         const user = await User.findOne({ email });
+//         if (!user) return res.status(404).json({ message: 'User not found' });
+//         if (user.provider === 'google') return res.status(400).json({ message: "Login with Google instead." });
+
+//         const resetToken = crypto.randomBytes(20).toString('hex');
+//         user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+//         user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+//         await user.save();
+
+//         const clientURL = process.env.NODE_ENV === 'production' 
+//             ? "https://arivohomes.vercel.app" 
+//             : "http://localhost:5173";
+
+//         const resetUrl = `${clientURL}/reset-password/${resetToken}`;
+//         const message = `
+//             <h1>Password Reset</h1>
+//             <p>Click below to reset your password:</p>
+//             <a href="${resetUrl}" clicktracking=off>${resetUrl}</a>
+//         `;
+
+//         try {
+//             await sendEmail({
+//                 email: user.email,
+//                 subject: 'ArivoHomes Password Reset',
+//                 html: message,
+//             });
+//             res.status(200).json({ success: true, data: 'Email Sent' });
+//         } catch (err) {
+//             user.resetPasswordToken = undefined;
+//             user.resetPasswordExpire = undefined;
+//             await user.save();
+//             return res.status(500).json({ message: 'Email could not be sent' });
+//         }
+//     } catch (error) {
+//         res.status(500).json({ message: error.message });
+//     }
+// };
+
+// const resetPassword = async (req, res) => {
+//     const resetPasswordToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+//     try {
+//         const user = await User.findOne({
+//             resetPasswordToken,
+//             resetPasswordExpire: { $gt: Date.now() },
+//         });
+
+//         if (!user) return res.status(400).json({ message: 'Invalid or Expired Token' });
+
+//         const salt = await bcrypt.genSalt(10);
+//         user.password = await bcrypt.hash(req.body.password, salt);
+//         user.resetPasswordToken = undefined;
+//         user.resetPasswordExpire = undefined;
+//         await user.save();
+
+//         res.status(200).json({ success: true, data: 'Password Updated Successfully' });
+//     } catch (error) {
+//         res.status(500).json({ message: error.message });
+//     }
+// };
+
+// module.exports = {
+//     registerUser,
+//     verifyOTP,
+//     loginUser,
+//     getMe,
+//     getUserProfile,
+//     googleAuth,
+//     forgotPassword,
+//     resetPassword,
+//     getUploadSignature,
+//     updateUserProfile
+// };
+
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
@@ -14,75 +343,16 @@ const generateToken = (id) => {
 };
 
 // ==========================================
-// GOOGLE AUTH CONTROLLER (PASSPORT-FREE)
-// ==========================================
-const googleAuth = async (req, res) => {
-    try {
-        const { name, email, photo, role } = req.body;
-
-        // 1. Check if user already exists
-        let user = await User.findOne({ email });
-
-        if (user) {
-            // If they exist but weren't verified, verify them now
-            if (!user.isVerified) {
-                user.isVerified = true;
-                await user.save();
-            }
-            
-            // Log them in and send token
-            return res.status(200).json({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                photo: user.photo,
-                token: generateToken(user._id),
-            });
-        } else {
-            // 2. Create new user if they don't exist
-            // Generate a random password since Google handles auth
-            const randomPassword = crypto.randomBytes(16).toString('hex');
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(randomPassword, salt);
-
-            user = await User.create({
-                name,
-                email,
-                password: hashedPassword,
-                role: role || 'tenant',
-                photo,
-                provider: 'google',
-                isVerified: true
-            });
-
-            return res.status(201).json({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                photo: user.photo,
-                token: generateToken(user._id),
-            });
-        }
-    } catch (error) {
-        console.error("Google Auth Error:", error);
-        res.status(400).json({ message: "Google authentication failed" });
-    }
-};
-
-// ==========================================
-// REGISTRATION & OTP
-// ==========================================
-// ==========================================
-// REGISTRATION & OTP
+// REGISTRATION & OTP (UPDATED)
 // ==========================================
 const registerUser = async (req, res) => {
     try {
+        // 1. Get phone from body
         const { name, email, password, phone, role } = req.body;
 
-        if (!name || !email || !password) {
-            return res.status(400).json({ message: "Please fill in all fields" });
+        // 2. Validate all fields (Added phone check)
+        if (!name || !email || !password || !phone) {
+            return res.status(400).json({ message: "Please fill in all fields (Name, Email, Password, Phone)" });
         }
 
         const userExists = await User.findOne({ email });
@@ -94,11 +364,12 @@ const registerUser = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, salt);
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+        // 3. Create User with Phone
         const user = await User.create({
             name,
             email,
             password: hashedPassword,
-            phone: phone || '',
+            phone, // <--- Saving phone here
             role: role || 'tenant',
             otp: otp,
             otpExpire: Date.now() + 10 * 60 * 1000
@@ -117,15 +388,27 @@ const registerUser = async (req, res) => {
                     subject: 'ArivoHomes - Verification Code',
                     html: message
                 });
-                res.status(201).json({ message: "OTP sent to your email!", email: user.email });
+                // Send back user data + token (optional, usually sent after verify)
+                res.status(201).json({ 
+                    success: true,
+                    message: "OTP sent to your email!", 
+                    email: user.email,
+                    // If you want to login immediately after register (skipping verify enforcement for now):
+                    token: generateToken(user._id),
+                    user: {
+                        _id: user._id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.role,
+                        phone: user.phone
+                    }
+                });
             } catch (error) {
-                // 🚨 CRITICAL DEBUGGING LINE
                 console.error("❌ EMAIL ERROR:", error); 
-
                 await User.findByIdAndDelete(user._id);
                 return res.status(500).json({ 
                     message: "Email could not be sent. Registration failed.",
-                    error: error.message // Helps you see the reason in the Browser Network Tab
+                    error: error.message 
                 });
             }
         }
@@ -133,6 +416,8 @@ const registerUser = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// ... (KEEP THE REST OF YOUR FUNCTIONS EXACTLY THE SAME: verifyOTP, loginUser, googleAuth, etc.) ...
 
 const verifyOTP = async (req, res) => {
     const { email, otp } = req.body;
@@ -155,9 +440,6 @@ const verifyOTP = async (req, res) => {
     }
 };
 
-// ==========================================
-// LOGIN
-// ==========================================
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -177,6 +459,7 @@ const loginUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                phone: user.phone, // Return phone on login too
                 token: generateToken(user._id)
             });
         } else {
@@ -187,9 +470,58 @@ const loginUser = async (req, res) => {
     }
 }
 
-// ==========================================
-// PROFILE & DATA
-// ==========================================
+const googleAuth = async (req, res) => {
+    try {
+        const { name, email, photo, role } = req.body;
+
+        let user = await User.findOne({ email });
+
+        if (user) {
+            if (!user.isVerified) {
+                user.isVerified = true;
+                await user.save();
+            }
+            return res.status(200).json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                phone: user.phone,
+                photo: user.photo,
+                token: generateToken(user._id),
+            });
+        } else {
+            const randomPassword = crypto.randomBytes(16).toString('hex');
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(randomPassword, salt);
+
+            user = await User.create({
+                name,
+                email,
+                password: hashedPassword,
+                role: role || 'tenant',
+                phone: 'Not Provided', // Default for Google Auth users until they update profile
+                photo,
+                provider: 'google',
+                isVerified: true
+            });
+
+            return res.status(201).json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                phone: user.phone,
+                photo: user.photo,
+                token: generateToken(user._id),
+            });
+        }
+    } catch (error) {
+        console.error("Google Auth Error:", error);
+        res.status(400).json({ message: "Google authentication failed" });
+    }
+};
+
 const getMe = async (req, res) => {
     res.status(200).json(req.user);
 }
@@ -248,9 +580,6 @@ const updateUserProfile = async (req, res) => {
     }
 };
 
-// ==========================================
-// PASSWORD RESET
-// ==========================================
 const forgotPassword = async (req, res) => {
     const { email } = req.body;
     try {

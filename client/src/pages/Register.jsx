@@ -235,7 +235,6 @@
 
 // export default Register;
 
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import API from '../axiosConfig';
@@ -252,6 +251,7 @@ const Register = () => {
         email: '',
         password: '',
     });
+    const [otp, setOtp] = useState(''); // New State for OTP
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
@@ -271,12 +271,12 @@ const Register = () => {
         setStep(2);
     };
 
-    // Step 2: Role Selection (Just updates state, does not change page)
+    // Step 2: Role Selection
     const selectRole = (selectedRole) => {
         setFormData({ ...formData, role: selectedRole });
     };
 
-    // Step 2: Continue Button (Moves to Step 3)
+    // Step 2 -> Step 3
     const handleRoleContinue = () => {
         if (!formData.role) {
             alert("Please select a role (Tenant or Owner) to continue.");
@@ -285,32 +285,53 @@ const Register = () => {
         setStep(3);
     };
 
-    // Step 3: Register -> Dashboard
+    // Step 3: Register -> GO TO OTP (Step 4)
     const onSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
+            // Make sure this matches your backend route
             const res = await API.post('/user/register', formData);
             
             if(res.data.success || res.status === 201) {
-                // 1. Save Token & User so they are "Logged In"
-                if (res.data.token) {
-                    localStorage.setItem('token', res.data.token);
-                }
-                localStorage.setItem('user', JSON.stringify(res.data.user || res.data));
-
-                // 2. Alert & Navigate
-                alert("Registration Successful! OTP sent to email.");
-                // If you want to force OTP verification first, navigate to /verify-otp
-                // If you want them in the dashboard immediately (as requested), go to /dashboard
-                navigate('/dashboard'); 
+                // ✅ CORRECT: Do NOT navigate to dashboard. Go to OTP step.
+                alert(res.data.message || "OTP sent to email!");
+                setStep(4); 
             } else {
                 alert(res.data.message);
             }
         } catch (error) {
             console.error(error);
             alert(error.response?.data?.message || 'Registration failed');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Step 4: Verify OTP -> Dashboard
+    const handleVerifyOtp = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            // Make sure this route matches your backend (e.g., /user/verify-otp)
+            const res = await API.post('/user/verify-otp', { 
+                email: formData.email, 
+                otp: otp 
+            });
+
+            if (res.data.success || res.data.token) {
+                // 1. Save Token (NOW we are logged in)
+                localStorage.setItem('token', res.data.token);
+                localStorage.setItem('user', JSON.stringify(res.data.user));
+
+                // 2. Navigate to Dashboard
+                alert("Verification Successful!");
+                navigate('/dashboard');
+            }
+        } catch (error) {
+            console.error(error);
+            alert(error.response?.data?.message || "Invalid OTP");
         } finally {
             setLoading(false);
         }
@@ -346,14 +367,11 @@ const Register = () => {
                     cursor: pointer; transition: all 0.2s ease;
                 }
                 .big-role-option:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
-                
-                /* SELECTED STATE STYLE */
                 .big-role-option.selected {
                     border-color: #38bdf8;
                     background: rgba(56, 189, 248, 0.15);
                     box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
                 }
-
                 .big-role-icon { font-size: 2rem; }
                 .big-role-text h3 { margin: 0; color: white; font-size: 1.1rem; }
                 .big-role-text p { margin: 2px 0 0; color: #94a3b8; font-size: 0.85rem; }
@@ -363,6 +381,7 @@ const Register = () => {
                 .input-group input {
                     width: 100%; padding: 15px 16px; border-radius: 14px; border: none; outline: none;
                     font-size: 0.95rem; background: rgba(255, 255, 255, 0.92); transition: all 0.3s ease;
+                    text-align: center; /* Centered text looks good for OTP */
                 }
                 .input-group input:focus { transform: scale(1.02); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.45); }
 
@@ -410,7 +429,7 @@ const Register = () => {
                                 <input 
                                     type="tel" 
                                     name="phone" 
-                                    placeholder="Mobile Number (e.g. 9876543210)" 
+                                    placeholder="Mobile Number" 
                                     value={formData.phone}
                                     onChange={(e) => {
                                         const re = /^[0-9\b]+$/;
@@ -421,6 +440,7 @@ const Register = () => {
                                     maxLength="10"
                                     required 
                                     autoFocus
+                                    style={{textAlign: 'left'}}
                                 />
                             </div>
 
@@ -438,7 +458,6 @@ const Register = () => {
                             <p className="subtitle">How will you use Arivo Homes?</p>
 
                             <div className="big-role-container">
-                                {/* Tenant Card */}
                                 <div 
                                     className={`big-role-option ${formData.role === 'tenant' ? 'selected' : ''}`} 
                                     onClick={() => selectRole('tenant')}
@@ -450,7 +469,6 @@ const Register = () => {
                                     </div>
                                 </div>
 
-                                {/* Owner Card */}
                                 <div 
                                     className={`big-role-option ${formData.role === 'owner' ? 'selected' : ''}`} 
                                     onClick={() => selectRole('owner')}
@@ -463,7 +481,6 @@ const Register = () => {
                                 </div>
                             </div>
 
-                            {/* Continue Button for Step 2 */}
                             <button className="primary-btn" onClick={handleRoleContinue}>
                                 Continue &rarr;
                             </button>
@@ -479,23 +496,51 @@ const Register = () => {
 
                             <form onSubmit={onSubmit}>
                                 <div className="input-group">
-                                    <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={onChange} required autoFocus />
+                                    <input type="text" name="name" placeholder="Full Name" value={formData.name} onChange={onChange} required autoFocus style={{textAlign: 'left'}} />
                                 </div>
                                 <div className="input-group">
-                                    <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={onChange} required />
+                                    <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={onChange} required style={{textAlign: 'left'}} />
                                 </div>
                                 <div className="input-group">
-                                    <input type="password" name="password" placeholder="Password" value={formData.password} onChange={onChange} required />
+                                    <input type="password" name="password" placeholder="Password" value={formData.password} onChange={onChange} required style={{textAlign: 'left'}} />
                                 </div>
 
                                 <button className="primary-btn" disabled={loading}>
-                                    {loading ? "Creating Account... ⏳" : "Register"}
+                                    {loading ? "Sending OTP... ⏳" : "Register"}
                                 </button>
 
                                 <div className="divider">OR</div>
-                                
-                                {/* Pass Phone and Role to OAuth Component */}
                                 <OAuth role={formData.role} phone={formData.phone} />
+                            </form>
+                        </>
+                    )}
+
+                    {/* --- STEP 4: OTP VERIFICATION (NEW) --- */}
+                    {step === 4 && (
+                        <>
+                            {/* Allow back to step 3 if email was wrong */}
+                            <button className="back-btn" onClick={() => setStep(3)}>&larr; Change Email</button>
+                            <h1>Verify Email</h1>
+                            <p className="subtitle">We sent a 6-digit code to <br/><b style={{color:'white'}}>{formData.email}</b></p>
+
+                            <form onSubmit={handleVerifyOtp}>
+                                <div className="input-group">
+                                    <input 
+                                        type="text" 
+                                        name="otp" 
+                                        placeholder="Enter 6-Digit OTP" 
+                                        value={otp} 
+                                        onChange={(e) => setOtp(e.target.value)} 
+                                        maxLength="6"
+                                        required 
+                                        autoFocus
+                                        style={{ letterSpacing: '5px', fontSize: '1.2rem', textAlign: 'center' }}
+                                    />
+                                </div>
+
+                                <button className="primary-btn" disabled={loading}>
+                                    {loading ? "Verifying... ⏳" : "Verify & Login"}
+                                </button>
                             </form>
                         </>
                     )}

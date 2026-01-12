@@ -343,14 +343,13 @@ const generateToken = (id) => {
 };
 
 // ==========================================
-// REGISTRATION & OTP (UPDATED)
+// REGISTRATION (FIXED: No Token Here)
 // ==========================================
 const registerUser = async (req, res) => {
     try {
-        // 1. Get phone from body
         const { name, email, password, phone, role } = req.body;
 
-        // 2. Validate all fields (Added phone check)
+        // 1. Validate all fields
         if (!name || !email || !password || !phone) {
             return res.status(400).json({ message: "Please fill in all fields (Name, Email, Password, Phone)" });
         }
@@ -360,19 +359,21 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ message: "User already exists" });
         }
 
+        // 2. Hash Password & Generate OTP
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // 3. Create User with Phone
+        // 3. Create User (Verified = false)
         const user = await User.create({
             name,
             email,
             password: hashedPassword,
-            phone, // <--- Saving phone here
+            phone,
             role: role || 'tenant',
             otp: otp,
-            otpExpire: Date.now() + 10 * 60 * 1000
+            otpExpire: Date.now() + 10 * 60 * 1000,
+            isVerified: false // Ensure this is false initially
         });
 
         if (user) {
@@ -388,21 +389,14 @@ const registerUser = async (req, res) => {
                     subject: 'ArivoHomes - Verification Code',
                     html: message
                 });
-                // Send back user data + token (optional, usually sent after verify)
+
+                // ✅ FIX: Do NOT send token here. User must verify OTP first.
                 res.status(201).json({ 
                     success: true,
-                    message: "OTP sent to your email!", 
-                    email: user.email,
-                    // If you want to login immediately after register (skipping verify enforcement for now):
-                    token: generateToken(user._id),
-                    user: {
-                        _id: user._id,
-                        name: user.name,
-                        email: user.email,
-                        role: user.role,
-                        phone: user.phone
-                    }
+                    message: "OTP sent to your email! Please verify to login.", 
+                    email: user.email 
                 });
+
             } catch (error) {
                 console.error("❌ EMAIL ERROR:", error); 
                 await User.findByIdAndDelete(user._id);
@@ -417,8 +411,9 @@ const registerUser = async (req, res) => {
     }
 };
 
-// ... (KEEP THE REST OF YOUR FUNCTIONS EXACTLY THE SAME: verifyOTP, loginUser, googleAuth, etc.) ...
-
+// ==========================================
+// VERIFY OTP (FIXED: Token Sent Here)
+// ==========================================
 const verifyOTP = async (req, res) => {
     const { email, otp } = req.body;
     try {
@@ -427,11 +422,25 @@ const verifyOTP = async (req, res) => {
         if (user.isVerified) return res.status(400).json({ message: "User already verified" });
 
         if (user.otp === otp && user.otpExpire > Date.now()) {
+            // 1. Mark verified and clear OTP
             user.isVerified = true;
             user.otp = undefined;
             user.otpExpire = undefined;
             await user.save();
-            res.status(200).json({ message: "Email Verified Successfully! You can now login." });
+
+            // 2. ✅ FIX: Send Token HERE (This logs the user in)
+            res.status(200).json({ 
+                success: true,
+                message: "Email Verified Successfully!",
+                token: generateToken(user._id),
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    phone: user.phone
+                }
+            });
         } else {
             return res.status(400).json({ message: "Invalid or Expired OTP" });
         }
@@ -440,10 +449,14 @@ const verifyOTP = async (req, res) => {
     }
 };
 
+// ==========================================
+// LOGIN USER
+// ==========================================
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
+        
         if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
         if (user.provider === 'google') {
@@ -454,12 +467,13 @@ const loginUser = async (req, res) => {
             if (!user.isVerified) {
                 return res.status(401).json({ message: "Account not verified. Please verify your email first." });
             }
+            
             res.json({
                 _id: user.id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                phone: user.phone, // Return phone on login too
+                phone: user.phone,
                 token: generateToken(user._id)
             });
         } else {
@@ -470,20 +484,19 @@ const loginUser = async (req, res) => {
     }
 }
 
+// ==========================================
+// GOOGLE AUTH
+// ==========================================
 const googleAuth = async (req, res) => {
     try {
-        // 1. Get 'phone' from req.body
         const { name, email, photo, role, phone } = req.body;
-
         let user = await User.findOne({ email });
 
         if (user) {
-            // User exists: Update verified status if needed
             if (!user.isVerified) {
                 user.isVerified = true;
                 await user.save();
             }
-            // Standard login response
             return res.status(200).json({
                 _id: user._id,
                 name: user.name,
@@ -494,18 +507,19 @@ const googleAuth = async (req, res) => {
                 token: generateToken(user._id),
             });
         } else {
-            // User DOES NOT exist: Create new user
             const randomPassword = crypto.randomBytes(16).toString('hex');
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(randomPassword, salt);
+
+            // Handle phone being required in Schema
+            const phoneValue = (phone && phone.length > 5) ? phone : '0000000000';
 
             user = await User.create({
                 name,
                 email,
                 password: hashedPassword,
                 role: role || 'tenant',
-                // 2. Use the phone from the frontend, or fallback if empty
-                phone: phone && phone.length > 9 ? phone : 'Not Provided', 
+                phone: phoneValue, 
                 photo,
                 provider: 'google',
                 isVerified: true
@@ -526,6 +540,10 @@ const googleAuth = async (req, res) => {
         res.status(400).json({ message: "Google authentication failed" });
     }
 };
+
+// ==========================================
+// USER PROFILE HELPERS
+// ==========================================
 
 const getMe = async (req, res) => {
     res.status(200).json(req.user);
@@ -549,15 +567,6 @@ const getUserProfile = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-};
-
-const getUploadSignature = (req, res) => {
-    const timestamp = Math.round((new Date).getTime() / 1000);
-    const signature = cloudinary.utils.api_sign_request({
-        timestamp: timestamp,
-        folder: 'user_profiles',
-    }, process.env.CLOUDINARY_API_SECRET);
-    res.json({ timestamp, signature });
 };
 
 const updateUserProfile = async (req, res) => {
@@ -584,6 +593,10 @@ const updateUserProfile = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// ==========================================
+// PASSWORD RESET
+// ==========================================
 
 const forgotPassword = async (req, res) => {
     const { email } = req.body;
@@ -646,6 +659,18 @@ const resetPassword = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+};
+
+// ==========================================
+// CLOUDINARY
+// ==========================================
+const getUploadSignature = (req, res) => {
+    const timestamp = Math.round((new Date).getTime() / 1000);
+    const signature = cloudinary.utils.api_sign_request({
+        timestamp: timestamp,
+        folder: 'user_profiles',
+    }, process.env.CLOUDINARY_API_SECRET);
+    res.json({ timestamp, signature });
 };
 
 module.exports = {
